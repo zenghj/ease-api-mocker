@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>login</title>
+    <link href="https://cdn.bootcss.com/bootstrap/4.0.0-beta/css/bootstrap.css" rel="stylesheet">
+    <style>
+        body {
+            background: rgb(5, 85, 85);
+            color: #fff;
+        }
+        .login-form {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+
+<body>
+    <form class="form-horizontal login-form" action="/login" method="post">
+
+        <div class="controls">
+            <label class="control-label" for="username">用户名</label>
+            <input type="text" id="username" placeholder="用户名" name="username">
+        </div>
+
+        <div class="controls">
+            <label class="control-label" for="password">密&emsp;码</label>
+            <input type="password" id="password" placeholder="密码"  name="password">
+        </div>
+
+
+        <div class="controls">
+            <button type="submit" class="btn">登录</button>
+        </div>
+
+    </form>
+</body>
+
+</html>
