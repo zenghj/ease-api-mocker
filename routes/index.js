@@ -4,84 +4,47 @@ var router = express.Router();
 var passport = require("passport");
 var path = require('path');
 var User = require('../db').User;
+var routeMap = require('./config');
+var checkAuth = require('../middlewares/checkauth').checkAuth;
+var authRouter = require('./auth');
+var apiRouter = require('./api');
 
 
+router.use('/auth', authRouter);
 
-var isAuthenticated = function (req, res, next) {
-  if(req.isAuthenticated()) {
-    return next();
-  } else {
-    res.redirect('/login')
-  }
-};
-
-
-// 注册页
-router.get("/signup", function (req, res) {
-    if(req.isAuthenticated()) {
-        res.redirect('/');
-    } else {
-        res.sendFile(path.resolve(__dirname, '../views/signup.html'));
-    }
-    
-});
-
-// 注册接口
-router.post("/signup", function (req, res, next) {
-
-    var username = req.body.username;
-    var password = req.body.password;
-
-    User.findOne({ username: username }, function (err, user) {
-
-        if (err) { return next(err); }
-        if (user) {
-            req.flash("error", "User already exists");
-            return res.redirect("/signup");
-        }
-
-        var newUser = new User({
-            username: username,
-            password: password
-        });
-        newUser.save(next);
-
-    });
-}, passport.authenticate("login", {
-    successRedirect: "/",
-    failureRedirect: "/signup",
-    failureFlash: true
-}));
-
-// 登陆页
-router.get("/login", function(req, res, next){
-    if(req.isAuthenticated()) {
-        res.redirect('/')
-    } else {
-        res.sendFile(path.resolve(__dirname, '../views/login.html'));
-    }
-});
-
-
-// 登陆接口
-router.post('/login',
-    passport.authenticate('login', { failureRedirect: '/login' }),
-    function (req, res) {
-        return res.redirect('/');
-    });
-
-// logout
-router.get('/logout', function (req, res, next) {
-    req.logout();
-    res.redirect('/login');
-});
-
-
-router.get('/', isAuthenticated, function(req, res) {
+router.get('/', checkAuth, function(req, res) {
     res.sendFile(path.resolve(__dirname, '../views/index.html'));
 });
 
+router.get('/project/:projectName', checkAuth, function(req, res) {
+    res.sendFile(path.resolve(__dirname, '../views/api-list.html'));
+});
+router.get('/project/:projectName/:apiName', checkAuth, function(req, res) {
+    res.sendFile(path.resolve(__dirname, '../views/api-detail.html'));
+});
 
+router.use('/api', apiRouter);
+
+// catch 404 and forward to error handler
+router.use(function (req, res, next) {
+    var err = new Error('Not Found');
+    err.status = 404;
+    next(err);
+});
+
+// error handler
+router.use(function (err, req, res, next) {
+    console.log(err.message);
+    // set locals, only providing error in development
+    res.locals.message = err.message;
+    res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+    
+    // render the error page
+    res.status(err.status || 500);
+    res.render('error');
+    
+});
 
 
 
