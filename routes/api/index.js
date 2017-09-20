@@ -2,9 +2,12 @@
 const express = require('express');
 const router = express.Router();
 const Project = require('../../db/project');
+const apiCheckAuth = require('../../middlewares/checkauth').apiCheckAuth;
+const errorLogger = require('../../middlewares/logger').errorLogger;
 
-// 这里的鉴权需要处理
-// 存储的时间，更新的时间需要处理
+// 这里统一处理'/api/**/*'路由下的鉴权
+router.use(apiCheckAuth);
+// 存储的时间，更新的时间需要处理，mongo存的是UTC格式的，暂定前端输出时处理
 
 // 创建项目
 router.post('/projects/:projectName', (req, res, next) => {
@@ -13,13 +16,15 @@ router.post('/projects/:projectName', (req, res, next) => {
     let projectName = req.params.projectName;
   
     if(typeof username === 'undefined') {
-        return res.sendStatus(401); // 用户未登录
+        let error = new Error('session中获取不到用户名');
+        return next(error);
+        // return res.sendStatus(401); // 用户未登录  
     }
-    if(typeof projectName === 'undefined') {
-        return res.status(404).send({
-            error: '项目名称不能为空'
-        });
-    }
+        // if(typeof projectName === 'undefined') {
+        //     return res.status(404).send({
+        //         error: '项目名称不能为空'
+        //     });
+        // }
     let newProject = new Project({
         name: projectName,
         createBy: username,
@@ -32,10 +37,15 @@ router.post('/projects/:projectName', (req, res, next) => {
             // return res.status(500).send({
             //     error: `${projectName} has already existed`
             // });
-            return next(new Error(`${projectName} has already existed`));
+            return res.status(400).send({
+                message: `${projectName} has already existed`
+            });
+            // let error = new Error(`${projectName} has already existed`);
+            // error.status = 400;
+            // return next(error);
         } else {
             // return res.sendStatus(201);
-            return res.json(savedProject); // 用于测试
+            return res.json(savedProject); // 这样返回只是为了便于测试
         }
     }); 
 
@@ -72,7 +82,7 @@ router.get('/projects', (req, res, next) => {
         Project.find({}, 'name updateBy updateAt', (err, docs) => {
             if(err) {
                 return res.status(500).send({
-                    error: 'cannot get the project list.'
+                    message: 'cannot get the project list.'
                 });
             } 
             return res.send(docs);
@@ -101,10 +111,13 @@ router.patch('/projects/:projectName', (req, res, next) => {
     });
 })
 
+// '/api'下的错误日志
+router.use(errorLogger);
 
 router.use((err, req, res, next) => {
     return res.status(500).send({
-        error: err.message || 'server error'
+        error: err.message || 'server error',
+        status: err.status || 500
     })
 });
 
