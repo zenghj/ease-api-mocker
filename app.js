@@ -12,7 +12,9 @@ var flash = require("connect-flash");
 var successLogger = require('./middlewares/logger').successLogger;
 var errorLogger = require('./middlewares/logger').errorLogger;
 mongoose.Promise = Promise;
-mongoose.connect("mongodb://localhost:27017/easy-api");
+mongoose.connect("mongodb://localhost:27017/easy-api", {
+    useMongoClient: true
+});
 require('./setup-passport');
 
 

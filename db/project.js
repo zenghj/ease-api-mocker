@@ -1,16 +1,15 @@
 const mongoose = require('mongoose');
-const apiSchema = require('./api').schema;
+// const apiSchema = require('./api').apiSchema;
 const mongoosePaginate = require('mongoose-paginate');
 
 const projectShema = new mongoose.Schema({
     name: {
         type: String
-       
+        ,index: true
         ,unique: true
-        
-        // ,index: true
+
     },
-    apis: apiSchema,
+    // apis: [apiSchema],
     isDeleted: {
         type: Boolean,
         default: false
@@ -24,7 +23,8 @@ const projectShema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    updateBy: String
+    updateBy: String,
+   
 });
 
 projectShema.plugin(mongoosePaginate);

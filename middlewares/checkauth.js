@@ -12,7 +12,10 @@ const checkAuth = function (req, res, next) {
 
 const apiCheckAuth = function (req, res, next) {
     if (req.isAuthenticated()) {
-        next();
+        if(typeof req.session.username === 'undefined') {
+            return next(new Error('can get username in session.'));
+        }
+        return next();
     } else {
         
         // 视客户端异步请求框架能不能辨别status再决定要不要给具体的错误信息
@@ -24,7 +27,7 @@ const apiCheckAuth = function (req, res, next) {
 
         // 尽量不要提前处理返回错误信息，都放到next(err)去处理，便于日志的统一管理
         // 这种级别的信息应该不需要打日志所以还是直接sendStatus
-        res.sendStatus(401);
+        return res.sendStatus(401);
         // let error = new Error('unauthorized');
         // error.status = 401;
         // next(error);
