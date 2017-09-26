@@ -49,8 +49,12 @@ router.post("/signup", function (req, res, next) {
 
         if (err) { return next(err); }
         if (user) {
-            req.flash("error", "User already exists");
-            return res.redirect(routeMap.signup);
+            // req.flash("error", "User already exists");
+            // return res.redirect(routeMap.signup); // 不使用res.render渲染页面的话，req.flash 并不会有任何卵用
+            return res.status(400).send({
+                status: 400,
+                message: 'User already exists'
+            });
         }
 
         var newUser = new User({
@@ -65,6 +69,9 @@ router.post("/signup", function (req, res, next) {
     failureRedirect: routeMap.signup,
     failureFlash: true
 }));
+
+// 更改密码接口
+
 
 
 // 登陆接口

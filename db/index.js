@@ -1,8 +1,11 @@
-var User = require('./user');
-var Project = require('./project');
+const User = require('./user');
+const Project = require('./project');
+const Api = require('./api');
+
 
 
 module.exports = {
     User: User,
-    Project: Project
+    Project: Project,
+    Api: Api
 };

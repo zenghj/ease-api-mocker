@@ -22,7 +22,10 @@ const constVars = {
 router.use(apiCheckAuth);
 // 存储的时间，更新的时间需要处理，mongo存的是UTC格式的，暂定前端输出时处理
 
+
+// baseUrl: '/api'
 // 创建项目
+// /api/projects/:projectName
 router.post('/projects/:projectName', (req, res, next) => {
     // /projects/ 不会被匹配上
     let username = req.session.username;
@@ -66,6 +69,7 @@ router.post('/projects/:projectName', (req, res, next) => {
 });
 
 // 读取项目列表
+// /api/projects
 router.get('/projects', (req, res, next) => {
     let projects = [];
     let pageSize = Number.parseInt(req.query.pageSize, 10);
