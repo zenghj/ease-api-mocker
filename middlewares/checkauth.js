@@ -12,12 +12,12 @@ const checkAuth = function (req, res, next) {
 
 const apiCheckAuth = function (req, res, next) {
     if (req.isAuthenticated()) {
-        if(typeof req.session.username === 'undefined') {
+        if (typeof req.session.username === 'undefined') {
             return next(new Error('can get username in session.'));
         }
         return next();
     } else {
-        
+
         // 视客户端异步请求框架能不能辨别status再决定要不要给具体的错误信息
         // 比如ajax会带，暂时不这样写error msg
         // res.status(401).send({

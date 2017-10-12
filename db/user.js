@@ -1,5 +1,6 @@
 var mongoose = require('mongoose');
 var bcrypt = require("bcrypt-nodejs");
+// 定义加密计算强度（值为1-3时会默认10的计算强度）
 var SALT_FACTOR = 10;
 var userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
@@ -8,7 +9,6 @@ var userSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 var noop = function() {};
-
 userSchema.pre("save", function(done) {
   var user = this;
 
