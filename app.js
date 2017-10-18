@@ -7,6 +7,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var passport = require('passport');
 var session = require("express-session");
+var expressValidator = require('express-validator');
 var successLogger = require('./middlewares/logger').successLogger;
 var errorLogger = require('./middlewares/logger').errorLogger;
 var router = require('./routes');
@@ -50,6 +51,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(expressValidator());
 
 // 正常请求的日志
 app.use(successLogger);
@@ -69,7 +71,6 @@ app.use(function (req, res, next) {
 
 // 错误处理
 app.use(function (err, req, res, next) {
-    console.log(err.message);
     // 开发环境显示具体错误信息
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
