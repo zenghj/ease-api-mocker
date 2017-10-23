@@ -25,17 +25,30 @@ router.route("/signup")
                 notEmpty: {
                     errorMessage: '用户名不能为空'
                 },
+                isAlpha: {
+                    errorMessage: '用户名须为3-10位的字母'
+                },
                 isLength: {
                     options: {
                         min: 3,
                         max: 10
                     },
-                    errorMessage: '用户名须为3-10位的字符'
+                    errorMessage: '用户名须为3-10位的字母'
                 }
             },
             password: {
                 notEmpty: {
                     errorMessage: '密码不能为空'
+                },
+                isAlphanumeric: {
+                    errorMessage: '密码至少6位数字或字母组合'
+                },
+                isLength: {
+                    options: {
+                        min: 6
+                        ,max: 20
+                        ,errorMessage: '密码至少6位数字或字母组合'
+                    }
                 }
             }
         })
@@ -48,26 +61,22 @@ router.route("/signup")
         }
         next();
     }, (req, res, next) => {
-        var username = req.body.username;
-        var password = req.body.password;
+        let {username, password} = req.body;
 
-        User.findOne({ username: username }, function (err, user) {
-
-
+        User.findOne({ username }, function (err, user) {
             if (err) { return next(err); }
             if (user) {
                 return res.status(400).send({
                     status: 400,
-                    message: 'User already exists'
+                    message: '用户名已注册'
                 });
             }
 
             User.create({
-                username: username,
-                password: password
+                username
+                ,password
             }, function (err, data) {
                 if (err) {
-                    console.error('创建用户失败');
                     return next(err);
                 }
                 next(null);
@@ -95,13 +104,6 @@ router.route("/login")
             username: {
                 notEmpty: {
                     errorMessage: '用户名不能为空'
-                },
-                isLength: {
-                    options: {
-                        min: 3,
-                        max: 10
-                    },
-                    errorMessage: '请输入有效用户名'
                 }
             },
             password: {
@@ -143,13 +145,6 @@ router.post('/resetpwd', (req, res, next) => {
         username: {
             notEmpty: {
                 errorMessage: '用户名不能为空'
-            },
-            isLength: {
-                options: {
-                    min: 3,
-                    max: 10
-                },
-                errorMessage: '请输入有效用户名'
             }
         },
         password: {
@@ -160,6 +155,16 @@ router.post('/resetpwd', (req, res, next) => {
         newPassword:  {
             notEmpty: {
                 errorMessage: '新密码不能为空'
+            },
+            isAlphanumeric: {
+                errorMessage: '密码至少6位数字或字母组合'
+            },
+            isLength: {
+                options: {
+                    min: 6
+                    ,max: 20
+                    ,errorMessage: '密码至少6位数字或字母组合'
+                }
             }
         }
     })
@@ -185,14 +190,14 @@ router.post('/resetpwd', (req, res, next) => {
                     User.update({
                         username: req.body.username
                     }, {
-                            password: hashedPassword
-                        }, function (err, user) {
-                            if (err) { return next(err); }
-                            res.send({
-                                status: 200,
-                                message: '密码修改成功'
-                            })
+                        password: hashedPassword
+                    }, function (err, user) {
+                        if (err) { return next(err); }
+                        res.send({
+                            status: 200,
+                            message: '密码修改成功'
                         })
+                    })
                 });
             });
         } else {
