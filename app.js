@@ -7,6 +7,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var passport = require('passport');
 var session = require("express-session");
+var RedisStore = require('connect-redis')(session);
 var expressValidator = require('express-validator');
 var successLogger = require('./middlewares/logger').successLogger;
 var errorLogger = require('./middlewares/logger').errorLogger;
@@ -27,12 +28,14 @@ require('./setup-passport');
 var app = express();
 
 app.use(session({
-    secret: "LUp$Dg?,I#i&owP3=9su+OB%`JgL4muLF5YJ~{;t",
-    resave: true,
-    saveUninitialized: true,
-    cookie: {
-        maxAge: 1000*3600*24
-    }
+    store: new RedisStore({
+        host: '127.0.0.1'
+        ,port: '6379'
+        ,ttl: 1000*3600*24
+    })
+    ,secret: "LUp$Dg?,I#i&owP3=9su+OB%`JgL4muLF5YJ~{;t"
+    ,resave: true
+    ,saveUninitialized: true
 }));
 app.use(passport.initialize());
 app.use(passport.session());
