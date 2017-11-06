@@ -23,17 +23,6 @@ mongoose.connect( config.DBHost,{
     console.error(err);
 });
 
-var redisStore = new RedisStore({
-    host: '127.0.0.1'
-    ,port: '6379'
-    ,ttl: 1000*3600*24
-});
-redisStore.on('disconnect', function(err){
-    console.error(err);
-})
-redisStore.on('connect', function(){
-    console.log('redis connection!');
-})
 //定义账户策略
 require('./setup-passport');
 
