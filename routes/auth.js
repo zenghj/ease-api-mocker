@@ -1,4 +1,3 @@
-
 'use strict';
 const express = require('express');
 const router = express.Router();
@@ -7,7 +6,10 @@ const path = require('path');
 const User = require('../db').User;
 const routeMap = require('./config');
 const bcrypt = require("bcrypt-nodejs");
+const toonavatar = require('cartoon-avatar');
 
+
+// baseUrl: '/auth'
 // 注册页
 router.route("/signup")
     .get(function (req, res) {
@@ -71,10 +73,12 @@ router.route("/signup")
                     message: '用户名已注册'
                 });
             }
-
+            let avatarOption = (req.body.gender ? {'gender': req.body.gender} : {});
+            let avatar = toonavatar.generate_avatar(avatarOption);
             User.create({
                 username
                 ,password
+                ,avatar
             }, function (err, data) {
                 if (err) {
                     return next(err);

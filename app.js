@@ -13,26 +13,34 @@ var successLogger = require('./middlewares/logger').successLogger;
 var errorLogger = require('./middlewares/logger').errorLogger;
 var router = require('./routes');
 var mongoose = require('mongoose');
+let config = require('config'); //we load the db location from the JSON files
 
 //连接数据库
 mongoose.Promise = Promise;
-mongoose.connect("mongodb://ace:ace@localhost:27017/easy-api",{
+mongoose.connect( config.DBHost,{
     useMongoClient: true
 }).catch(function(err){
     console.error(err);
 });
 
+var redisStore = new RedisStore({
+    host: '127.0.0.1'
+    ,port: '6379'
+    ,ttl: 1000*3600*24
+});
+redisStore.on('disconnect', function(err){
+    console.error(err);
+})
+redisStore.on('connect', function(){
+    console.log('redis connection!');
+})
 //定义账户策略
 require('./setup-passport');
 
 var app = express();
 
 app.use(session({
-    store: new RedisStore({
-        host: '127.0.0.1'
-        ,port: '6379'
-        ,ttl: 1000*3600*24
-    })
+    store: redisStore
     ,secret: "LUp$Dg?,I#i&owP3=9su+OB%`JgL4muLF5YJ~{;t"
     ,resave: true
     ,saveUninitialized: true
@@ -85,4 +93,4 @@ app.use(function (err, req, res, next) {
 });
 
 
-module.exports = app;
+module.exports = app; // for testing

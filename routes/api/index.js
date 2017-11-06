@@ -8,10 +8,10 @@ const errorLogger = require('../../middlewares/logger').errorLogger;
 const util = require('../../lib/util');
 
 const constVars = {
-    projectQuery: 'name updateBy updateAt isDeleted',
+    projectQuery: 'id name updateBy updateAt isDeleted',
     apiQuery: 'name reqUrl',
     apiCanUpdate: 'projectName APIName reqUrl method canCrossDomain reqParams resParams successMock failMock reqMock',
-    apiCanRead: 'projectName APIName reqUrl method canCrossDomain reqParams resParams successMock failMock reqMock createAt createBy updateAt updateBy version isDeleted',
+    apiCanRead: 'id projectName APIName reqUrl method canCrossDomain reqParams resParams successMock failMock reqMock createAt createBy updateAt updateBy version isDeleted',
     duplicateCode: 11000
 };
 
@@ -34,9 +34,9 @@ router.post('/projects/:projectName', (req, res, next) => {
     newProject.save((err, savedProject) => {
         if (err) {
             if (err.code === 11000) {
-                return res.status(500).send({
-                    status: '500',
-                    message: '项目名已存在'
+                return res.status(422).send({
+                    status: '422', // 422:当创建一个对象时，发生一个验证错误。
+                    message: '该项目名在项目列表或回收站项目列表中已存在'
                 });
             };
             return res.status(500).send({
@@ -45,7 +45,7 @@ router.post('/projects/:projectName', (req, res, next) => {
             });
         } else {
             return res.send({
-                status: 200,
+                status: 201, // 201: [POST/PUT/PATCH]：用户新建或修改数据成功。
                 result: savedProject
             });
         }
@@ -59,7 +59,9 @@ router.get('/projects', (req, res, next) => {
     let { pageSize, pageNo } = req.query;
     if (pageSize > 0 && pageNo > 0) {
         // 分页
-        Project.paginate({}, {
+        Project.find({
+            isDeleted: false // 未删除的项目
+        }).paginate({}, {
             page: pageNo,
             limit: pageSize,
             select: constVars.projectQuery
@@ -70,7 +72,7 @@ router.get('/projects', (req, res, next) => {
         })
     } else {
         // 不分页
-        Project.find({}, constVars.projectQuery, (err, docs) => {
+        Project.find({isDeleted: false}, constVars.projectQuery, (err, docs) => {
             if (err) {
                 return res.status(500).send({
                     message: 'cannot get the project list.'
@@ -82,8 +84,8 @@ router.get('/projects', (req, res, next) => {
 
 });
 
-// 更改项目名称
-router.patch('/projects/:projectName', (req, res, next) => {
+// 更改项目名称 （暂时不做是否已经在回收站的校验）
+router.patch('/projects/:projectId', (req, res, next) => {
     //校验基本数据格式
     req.checkBody({
         newProjectName: {
@@ -101,10 +103,11 @@ router.patch('/projects/:projectName', (req, res, next) => {
     }
     next();
 }, (req, res, next) => {
-    let oldName = req.params.projectName;
+    let projectId = req.params.projectId;
+    // let oldName = req.params.projectName;
     let newName = req.body.newProjectName;
 
-    Project.findOneAndUpdate({ name: oldName }, {
+    Project.findOneAndUpdate({ id: projectId }, {
         name: newName,
         updateAt: Date.now(),
         updateBy: req.session.username
@@ -125,17 +128,26 @@ router.patch('/projects/:projectName', (req, res, next) => {
 );
 
 // 删除项目
-router.delete('/projects/:projectName', (req, res, next) => {
-    let projectName = req.params.projectName;
+router.delete('/projects/:projectId', (req, res, next) => {
+    let projectId = req.params.projectId;
     let isForceDelete = req.body.isForceDelete;
     if (isForceDelete === 'true') {
         // 完全删除
-        Project.findOneAndRemove({ name: projectName }, (err, doc) => {
+        Project.findOneAndRemove({ id: projectId }, (err, doc) => {
             if (err) {
                 return next(err);
             }
             if (doc) {
-                res.sendStatus(204);// 204删除成功
+                Api.find({projectId: projectId})
+                    .remove((err, writeOpResult) => {
+                        if(err) {
+                            return next(err);
+                        }
+
+                        res.sendStatus(204);// 204删除成功
+                    });
+
+                
             } else {
                 res.send({
                     status: '404',
@@ -145,7 +157,7 @@ router.delete('/projects/:projectName', (req, res, next) => {
         });
     } else {
         // 移入回收站
-        Project.findOneAndRemove({ name: projectName }, {
+        Project.findOneAndUpdate({ id: projectId }, {
             isDeleted: true
         }, (err, doc) => {
             if (err) {
@@ -153,7 +165,14 @@ router.delete('/projects/:projectName', (req, res, next) => {
                 return next(err);
             }
             if (doc) {
-                res.sendStatus(204);// 204删除成功
+                Api.update({projectId: projectId}, {
+                    isDeleted: true
+                }, (err) => {
+                    if(err) {
+                        return next(err);  
+                    }
+                    res.sendStatus(204);// 204删除成功
+                })
             } else {
                 res.send({
                     status: '404',
@@ -167,14 +186,16 @@ router.delete('/projects/:projectName', (req, res, next) => {
 
 // 读取当前项目apis
 
-router.get('/projects/:projectName/apis', (req, res, next) => {
-    let projectName = req.params.projectName;
+router.get('/projects/:projectId/apis', (req, res, next) => {
+    let projectId = req.params.projectId;
     let pageSize = Number.parseInt(req.query.pageSize, 10);
     let pageNo = Number.parseInt(req.query.pageNo, 10);
     if (pageSize && pageNo) {
         //分页获取
-        Api.paginate({
-            belongTo: projectName
+        Api.find({
+            isDeleted: false
+        }).paginate({
+            projectId: projectId
         }, {
                 page: pageNo,
                 limit: pageSize,
@@ -186,7 +207,8 @@ router.get('/projects/:projectName/apis', (req, res, next) => {
     } else {
         // 不分页
         Api.find({
-            belongTo: projectName
+            isDeleted: false,
+            projectId: projectId
         }, constVars.apiCanRead, (err, docs) => {
             if (err) {
                 return next(err);
@@ -271,131 +293,136 @@ function checkAPI(req, res, next) {
     }
     next();
 }
-router.route('/projects/:projectName/:APIName')
-    .post(checkAPI, (req, res, next) => {
-        //校验基本数据格式
-        req.checkBody({
-            reqUrl: {
-                notEmpty: {
-                    errorMessage: '接口名不能为空'
-                }
-                , isURL: {
-                    errorMessage: '接口路径错误'
-                }
-            }
-            , method: {
-                notEmpty: {
-                    errorMessage: '接口名不能为空'
-                }
-            }
-            , reqParams: {
-                custom: function (value) {
-                    if (value) {
-                        try {
-                            let res = JSON.parse(value);
-                            if (!Array.isArray(res)) {
-                                return false;
-                            }
-                        } catch (err) {
-                            next(err);
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-            }
-            , resParams: {
-                custom: function (value) {
-                    if (value) {
-                        try {
-                            let res = JSON.parse(value);
-                            if (!Array.isArray(res)) {
-                                return false;
-                            }
-                        } catch (err) {
-                            next(err);
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-            }
-            , successMock: {
-                notEmpty: {
-                    errorMessage: '返回成功数据不能为空'
-                }
-            }
 
-        })
-        let errors = req.validationErrors();
-        if (errors) {
-            return res.send({
-                status: 400,
-                message: errors[0].msg
-            })
+
+// 创建api
+router.post('/projects/:projectId/:APIName', checkAPI, (req, res, next) => {
+    //校验基本数据格式
+    req.checkBody({
+        reqUrl: {
+            notEmpty: {
+                errorMessage: '接口名不能为空'
+            }
+            , isURL: {
+                errorMessage: '接口路径错误'
+            }
         }
-        next();
-    }, (req, res, next) => {
-        // 创建 api item
-        let { projectName, APIName } = req.params;
-        let { reqUrl, method, canCrossDomain, reqParams, resParams, successMock, failMock, reqMock } = req.body;
-        canCrossDomain = (req.body.canCrossDomain === 'true' ? true : false);
-        let sessionUserName = req.session.username;
-        let api = {
-            projectName
-            , APIName
-            , reqUrl
-            , method
-            , canCrossDomain
-            , reqParams
-            , resParams
-            , successMock
-            , failMock
-            , reqMock
-            , createBy: sessionUserName
-            , updateBy: sessionUserName
-
-        };
-
-        Project.findOne({ name: projectName })
-            .exec((err, project) => {
-                if (err) {
-                    return next(err);
-                } else if (project) {
-                    //检测端口是否已存在
-                    Api.findOne({
-                        projectName
-                        , APIName
-                    }, function (err, doc) {
-                        if (err) {
-                            return next(err);
+        , method: {
+            notEmpty: {
+                errorMessage: '接口名不能为空'
+            }
+        }
+        , reqParams: {
+            custom: function (value) {
+                if (value) {
+                    try {
+                        let res = JSON.parse(value);
+                        if (!Array.isArray(res)) {
+                            return false;
                         }
-                        if (!doc) {
-                            return res.status(404).send({
-                                status: 404,
-                                message: `该项目下名为“${APIName}”的接口已存在`
-                            })
-                        }
-                    })
-                    let newApi = new Api(api);
-                    newApi.save((err) => {
-                        if (err) {
-                            return next(err);
-                        }
-                        return res.sendStatus(201);
-                    })
-
-                } else {
-                    return res.status(404).send({
-                        status: 404,
-                        message: `project: ${projectName} not exist`
-                    });
+                    } catch (err) {
+                        next(err);
+                        return false;
+                    }
                 }
-            })
+                return true;
+            }
+        }
+        , resParams: {
+            custom: function (value) {
+                if (value) {
+                    try {
+                        let res = JSON.parse(value);
+                        if (!Array.isArray(res)) {
+                            return false;
+                        }
+                    } catch (err) {
+                        next(err);
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        , successMock: {
+            notEmpty: {
+                errorMessage: '返回成功数据不能为空'
+            }
+        }
+
     })
+    let errors = req.validationErrors();
+    if (errors) {
+        return res.send({
+            status: 400,
+            message: errors[0].msg
+        })
+    }
+    next();
+}, (req, res, next) => {
+    // 创建 api item
+    let { projectName, APIName } = req.params;
+    let { reqUrl, method, canCrossDomain, reqParams, resParams, successMock, failMock, reqMock } = req.body;
+    canCrossDomain = (req.body.canCrossDomain === 'true' ? true : false);
+    let sessionUserName = req.session.username;
+    let api = {
+        projectName
+        , APIName
+        , reqUrl
+        , method
+        , canCrossDomain
+        , reqParams
+        , resParams
+        , successMock
+        , failMock
+        , reqMock
+        , createBy: sessionUserName
+        , updateBy: sessionUserName
+
+    };
+
+    Project.findOne({ name: projectName })
+        .exec((err, project) => {
+            if (err) {
+                return next(err);
+            } else if (project) {
+                //检测端口是否已存在
+                Api.findOne({
+                    projectName
+                    , APIName
+                }, function (err, doc) {
+                    if (err) {
+                        return next(err);
+                    }
+                    if (doc) {
+                        return res.status(422).send({
+                            status: 422,
+                            message: `该项目下或回收站中名为“${APIName}”的接口已存在`
+                        })
+                    }
+                })
+                let newApi = new Api(api);
+                newApi.save((err) => {
+                    if (err) {
+                        return next(err);
+                    }
+                    return res.sendStatus(201);
+                })
+
+            } else {
+                return res.status(404).send({
+                    status: 404,
+                    message: `project: ${projectName} not exist`
+                });
+            }
+        })
+});
+
+
+router.route('/projects/:projectId/:apiId')
     .put(checkAPI, (req, res, next) => {
         // 更新api数据
-        let { projectName, APIName } = req.params;
+        let { projectId, apiId } = req.params;
         let update = {};
 
         Object.keys(req.body).forEach((key) => {
@@ -406,8 +433,8 @@ router.route('/projects/:projectName/:APIName')
         });
 
         Api.findOneAndUpdate({
-            projectName
-            , APIName
+            projectId,
+            id: apiId
         }, update, (err, doc) => {
             if (err) {
                 return next(err);
@@ -426,10 +453,10 @@ router.route('/projects/:projectName/:APIName')
     })
     .get((req, res, next) => {
         // 获取api详细内容
-        let { projectName, APIName } = req.params;
+        let { projectId, apiId } = req.params;
         Api.findOne({
-            projectName
-            , APIName
+            projectId,
+            id: apiId
         }, constVars.apiCanRead).exec((err, api) => {
             if (err) {
                 return next(err);
@@ -439,37 +466,46 @@ router.route('/projects/:projectName/:APIName')
             }
             return res.status(404).send({
                 status: 404,
-                message: `${projectName}项目下不存在 ${APIName}`
+                message: `id为${projectId}项目下不存在id为 ${apiId} 的接口`
             });
         })
 
     })
     .delete((req, res, next) => {
-        let { projectName, APIName } = req.params;
+        let { projectId, apiId } = req.params;
         let isForceDelete = req.body.isForceDelete;
 
         if (isForceDelete === 'true') {
             // 彻底删除
-            Api.findOneAndRemove({
-                projectName
-                , APIName
-            }, (err) => {
+            Api.findOne({
+                projectId: projectId,
+                id: apiId
+            }, (err, doc) => {
                 if (err) {
                     return next(err);
                 }
                 if (doc) {
-                    return res.sendStatus(204);
+                    Api.remove({
+                        projectId,
+                        id: apiId
+                    }, (err) => {
+                        if(err) {
+                            return next(err);
+                        }
+                        return res.sendStatus(204); // 204: [DELETE]：用户删除数据成功。
+                    })
                 }
+
                 return res.status(404).send({
                     status: 404,
-                    message: `${projectName}项目下不存在 ${apiName}`
+                    message: `id为${projectId}的项目下不存在id为 ${apiId} 的接口`
                 })
             });
         } else {
             // 放入回收站
             Api.findOneAndUpdate({
-                projectName
-                , APIName
+                projectId: projectId,
+                id: apiId
             }, { isDeleted: true }, (err, doc) => {
                 if (err) {
                     return next(err);
@@ -479,41 +515,48 @@ router.route('/projects/:projectName/:APIName')
                 }
                 return res.status(404).send({
                     status: 404,
-                    message: `${projectName}项目下不存在 ${apiName}`
+                    message: `id为${projectId}的项目下不存在id为 ${apiId} 的接口`
                 })
             });
         }
 
     });
 
-// 项目搜索【名称、创建人、时间】暂时只写名称(忽略大小写)
+// 项目搜索【名称、创建人、时间】暂时只写名称(忽略大小写) 
+// 暂未排除已经删除到回收站的结果
 router.get('/search/projects', (req, res, next) => {
-    let keyword = req.query.keyword.trim();
-    if (keyword) {
+    let {keyword, pageNo, pageSize} = req.query;
+    if (keyword && pageNo && pageSize) {
         Project.find({
             name: new RegExp(keyword, 'i')
-        }, constVars.projectQuery, (err, docs) => {
+        }, constVars.projectQuery).paginate({
+            page: pageNo,
+            limit: pageSize
+        }).then((err, results) => {
             if (err) {
                 return next(err);
             } else {
-                return res.send(docs || []);
+                return res.send(results || []);
             }
-        });
+        })
     } else {
-        // keyword为空怎么返回？到时候定
-        return res.sendStatus(404);
+        return res.sendStatus(400);
     }
 });
 
 // api搜索
+// 暂未排除已经删除到回收站的结果
 router.get('/search/:projectName/apis', (req, res, next) => {
-    var keyword = util.trim(req.query.keyword);
-    var projectName = util.trim(req.params.projectName);
-    if (keyword) {
+    let {keyword, projectId, pageNo, pageSize} = req.query;
+    
+    if (keyword && projectId && pageNo && pageSize) {
         Api.find({
             APIName: new RegExp(keyword, 'i')
-            , projectName
-        }, constVars.apiCanRead, (err, docs) => {
+            , projectId
+        }, constVars.apiCanRead).paginate({
+            page: pageNo,
+            limit: pageSize
+        }).then((err, results) => {
             if (err) {
                 return next(err);
             }
@@ -521,7 +564,7 @@ router.get('/search/:projectName/apis', (req, res, next) => {
         });
     } else {
         // keyword为空怎么返回？到时候定
-        return res.sendStatus(404);
+        return res.sendStatus(400);
     }
 })
 

@@ -5,7 +5,12 @@ var SALT_FACTOR = 10;
 var userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  avatar: {
+        required: true,
+      type: String,
+      default: 'https://raw.githubusercontent.com/Ashwinvalento/cartoon-avatar/master/lib/images/male/101.png'
+  }
 });
 var noop = function () { };
 userSchema.pre("save", function (done) {

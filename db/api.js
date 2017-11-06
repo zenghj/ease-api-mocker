@@ -14,14 +14,14 @@ const Schema = mongoose.Schema;
 //     }
 // }]
 const apiSchema = new Schema({
-    projectName: {
+    // api所属的项目名称
+    projectId: {
         type: String,
         index: true
     },
     APIName: {
-        type: String
-        , required: true
-        , index: true
+        type: String, 
+        required: true
     },
     isDeleted: {
         type: Boolean,

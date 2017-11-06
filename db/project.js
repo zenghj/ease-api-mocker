@@ -30,5 +30,19 @@ const projectShema = new mongoose.Schema({
 projectShema.plugin(mongoosePaginate);
 
 const Project = mongoose.model('Project', projectShema);
+Project.deleteProject = function(query, successCb, notFoundCb) {
+    
+};
+
+Project.moveProjectToTrash = function(query, next, successCb, notFoundCb) {
+    Project.findOne(query).exec((err, successCb, notFoundCb) => {
+        if(err) {
+            return next(err);
+        }
+        doc && typeof successCb === 'function' && successCb()
+
+        
+    });
+};
 
 module.exports = Project;
