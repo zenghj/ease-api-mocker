@@ -38,7 +38,17 @@ redisStore.on('connect', function(){
 require('./setup-passport');
 
 var app = express();
-
+var redisStore = new RedisStore({
+    host: '127.0.0.1'
+    ,port: '6379'
+    ,ttl: 1000*3600*24
+});
+redisStore.on('disconnect', function(err){
+    console.error(err);
+})
+redisStore.on('connect', function(){
+    console.log('redis connection!');
+})
 app.use(session({
     store: redisStore
     ,secret: "LUp$Dg?,I#i&owP3=9su+OB%`JgL4muLF5YJ~{;t"
