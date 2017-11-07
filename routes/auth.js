@@ -27,9 +27,6 @@ router.route("/signup")
                 notEmpty: {
                     errorMessage: '用户名不能为空'
                 },
-                isAlpha: {
-                    errorMessage: '用户名须为3-10位的字母'
-                },
                 isLength: {
                     options: {
                         min: 3,
@@ -124,11 +121,16 @@ router.route("/login")
             })
         }
         next();
-    }, passport.authenticate('login', { failureRedirect: routeMap.login }), function (req, res) {
+    }, passport.authenticate('login', { failWithError: true  }), function (req, res, next) {
         var redirectTo = req.session.redirectTo || routeMap.home;
         delete req.session.redirectTo;
         req.session.username = req.body.username; // 把用户名存入session
         return res.redirect(redirectTo);
+    }, function(err, req, res, next) {
+        // if(req.xhr) { 
+            return res.json(err);
+        // }
+        // return res.redirect(routeMap.login);
     });
 
 // 登出

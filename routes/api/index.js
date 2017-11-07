@@ -6,6 +6,7 @@ const Api = require('../../db/api');
 const apiCheckAuth = require('../../middlewares/checkauth').apiCheckAuth;
 const errorLogger = require('../../middlewares/logger').errorLogger;
 const util = require('../../lib/util');
+const _ = require('underscore');
 
 const constVars = {
     projectQuery: 'id name updateBy updateAt isDeleted',
@@ -28,25 +29,22 @@ router.post('/projects/:projectName', (req, res, next) => {
     let projectName = req.params.projectName;
     let newProject = new Project({
         name: projectName,
-        createBy: username,
-        updateBy: username
+        createBy: username
     });
     newProject.save((err, savedProject) => {
         if (err) {
             if (err.code === 11000) {
-                return res.status(422).send({
-                    status: '422', // 422:当创建一个对象时，发生一个验证错误。
+                return res.status(400).send({
+                    status: 400, // 400:当创建一个对象时，发生一个验证错误。
                     message: '该项目名在项目列表或回收站项目列表中已存在'
                 });
             };
-            return res.status(500).send({
-                status: '500',
-                message: '创建项目失败'
-            });
+            return next(err);
         } else {
-            return res.send({
+            return res.status(201).send({
                 status: 201, // 201: [POST/PUT/PATCH]：用户新建或修改数据成功。
-                result: savedProject
+                result: savedProject,
+                message: '创建成功'
             });
         }
     });
@@ -55,33 +53,17 @@ router.post('/projects/:projectName', (req, res, next) => {
 // 读取项目列表
 // /api/projects
 router.get('/projects', (req, res, next) => {
-    let projects = [];
-    let { pageSize, pageNo } = req.query;
-    if (pageSize > 0 && pageNo > 0) {
-        // 分页
-        Project.find({
-            isDeleted: false // 未删除的项目
-        }).paginate({}, {
-            page: pageNo,
-            limit: pageSize,
+    let { limit = 10, page = 1 } = req.query;
+    Project.paginate({
+        isDeleted: false
+    }, {
+            page,
+            limit,
             select: constVars.projectQuery
         }).then((result) => {
-            result.pageSize = result.limit;
-            delete result.limit;
-            res.send(result);
+            result.status = 200;
+            res.status(200).json(result);
         })
-    } else {
-        // 不分页
-        Project.find({isDeleted: false}, constVars.projectQuery, (err, docs) => {
-            if (err) {
-                return res.status(500).send({
-                    message: 'cannot get the project list.'
-                });
-            }
-            return res.send(docs);
-        })
-    }
-
 });
 
 // 更改项目名称 （暂时不做是否已经在回收站的校验）
@@ -94,9 +76,10 @@ router.patch('/projects/:projectId', (req, res, next) => {
             }
         }
     })
+
     let errors = req.validationErrors();
     if (errors) {
-        return res.send({
+        return res.status(400).json({
             status: 400,
             message: errors[0].msg
         })
@@ -104,22 +87,28 @@ router.patch('/projects/:projectId', (req, res, next) => {
     next();
 }, (req, res, next) => {
     let projectId = req.params.projectId;
-    // let oldName = req.params.projectName;
     let newName = req.body.newProjectName;
 
-    Project.findOneAndUpdate({ id: projectId }, {
+    Project.findByIdAndUpdate(projectId, {
         name: newName,
         updateAt: Date.now(),
         updateBy: req.session.username
     }, (err, doc) => {
         if (err) {
-            return next(new Error('fail to update project name.'));
+            return next(err);
         }
         if (doc) {
-            res.sendStatus(201);
+            return res.status(201).json({
+                status: 201,
+                message: '更新成功'
+                // 直接返回doc给用户的话会是更新前的值（有点滞后）
+                //（如有必要可以用findOneById, 然后doc.save实现来避免这个问题）
+                // ,result: doc 
+
+            });
         } else {
-            res.send({
-                status: '404',
+            return res.status(404).json({
+                status: 404,
                 message: '更新的项目不存在'
             })
         }
@@ -138,16 +127,16 @@ router.delete('/projects/:projectId', (req, res, next) => {
                 return next(err);
             }
             if (doc) {
-                Api.find({projectId: projectId})
+                Api.find({ projectId: projectId })
                     .remove((err, writeOpResult) => {
-                        if(err) {
+                        if (err) {
                             return next(err);
                         }
 
                         res.sendStatus(204);// 204删除成功
                     });
 
-                
+
             } else {
                 res.send({
                     status: '404',
@@ -165,11 +154,11 @@ router.delete('/projects/:projectId', (req, res, next) => {
                 return next(err);
             }
             if (doc) {
-                Api.update({projectId: projectId}, {
+                Api.update({ projectId: projectId }, {
                     isDeleted: true
                 }, (err) => {
-                    if(err) {
-                        return next(err);  
+                    if (err) {
+                        return next(err);
                     }
                     res.sendStatus(204);// 204删除成功
                 })
@@ -489,7 +478,7 @@ router.route('/projects/:projectId/:apiId')
                         projectId,
                         id: apiId
                     }, (err) => {
-                        if(err) {
+                        if (err) {
                             return next(err);
                         }
                         return res.sendStatus(204); // 204: [DELETE]：用户删除数据成功。
@@ -525,30 +514,47 @@ router.route('/projects/:projectId/:apiId')
 // 项目搜索【名称、创建人、时间】暂时只写名称(忽略大小写) 
 // 暂未排除已经删除到回收站的结果
 router.get('/search/projects', (req, res, next) => {
-    let {keyword, pageNo, pageSize} = req.query;
-    if (keyword && pageNo && pageSize) {
-        Project.find({
-            name: new RegExp(keyword, 'i')
-        }, constVars.projectQuery).paginate({
-            page: pageNo,
-            limit: pageSize
-        }).then((err, results) => {
-            if (err) {
-                return next(err);
-            } else {
-                return res.send(results || []);
-            }
-        })
-    } else {
-        return res.sendStatus(400);
+    let { keyword = '', page = 1, limit = 10 } = req.query;
+    // console.log(req.query);
+    if (keyword === '') {
+        return res.status(400).json({
+            status: 400,
+            message: 'keyword不能为空'
+        });
     }
+
+    Project.paginate({
+        name: new RegExp(keyword, 'i')
+        // name: keyword
+    }, { page: page, limit: limit }, (err, results) => {
+        if (err) {
+            if (err.docs && err.docs.length === 0) {
+                // 查询结果为[]
+                return res.status(200).json({
+                    status: 200,
+                    result: err,
+                    keyword: keyword
+                });
+            }
+            console.log('-------');
+            console.log(err);
+            return next(err);
+        } else {
+            return res.status(200).json({
+                status: 200,
+                result: results,
+                keyword: keyword
+            });
+        }
+    })
+
 });
 
 // api搜索
 // 暂未排除已经删除到回收站的结果
 router.get('/search/:projectName/apis', (req, res, next) => {
-    let {keyword, projectId, pageNo, pageSize} = req.query;
-    
+    let { keyword, projectId, pageNo, pageSize } = req.query;
+
     if (keyword && projectId && pageNo && pageSize) {
         Api.find({
             APIName: new RegExp(keyword, 'i')
@@ -575,8 +581,9 @@ router.use(errorLogger);
 router.use((err, req, res, next) => {
     //只处理500未知错误
     return res.status(500).send({
-        error: err.message || 'server error',
-        status: err.status || 500
+        error: err,
+        status: 500,
+        message: err.message || '未知服务器错误'
     })
 });
 
