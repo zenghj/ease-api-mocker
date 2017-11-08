@@ -60,6 +60,7 @@ describe('User', () => {
 });
 
 module.exports = {
-    agent: agent
+    agent: agent,
+    user: julian
 };
 

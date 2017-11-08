@@ -1,3 +1,5 @@
+[toc]
+
 # Project相关的接口文档
 
 1. 接口设计尽量遵循restful api 风格
@@ -31,9 +33,11 @@
 
 * req
 
+```
 url: /api/projects/:projectName
 method: POST
 param: 无
+```
 
 * res
 
@@ -43,7 +47,15 @@ param: 无
 
 {
     "status": 201, // 201: [POST/PUT/PATCH]：用户新建或修改数据成功。
-    "result": {}, // savedProject
+    "result": { // savedProject
+        "__v": 0,
+        "name": "我的第2个项目",
+        "createBy": "julian",
+        "_id": "5a026892b1a3470a527bfd36",
+        "updateAt": "2017-11-08T02:14:42.556Z",
+        "createAt": "2017-11-08T02:14:42.556Z",
+        "isDeleted": false
+    }, 
     "message": "创建成功"
 }
 
@@ -61,12 +73,15 @@ param: 无
 ## 分页获取项目列表
 
 * req
-url: /projects
+
+```
+url: /api/projects
 method: GET
 param: {
-    page: [Number], // default 1
-    limit: [Number] // default 10
+    page: [Number], // pageNo default 1 
+    limit: [Number] // pageSize default 10
 }
+```
 
 * res
 
@@ -96,11 +111,13 @@ param: {
 
 * req
 
-url: /projects/:projectId
+```
+url: /api/projects/:projectId
 method: PATCH
 param: {
     newProjectName: [String]
 }
+```
 
 * res
 
@@ -137,6 +154,7 @@ param: {
 
 * req
 
+```
 url: /api/search/projects
 method: GET
 param: {
@@ -144,6 +162,7 @@ param: {
     page: [Number], // default 1
     limit: [Number] // default 10
 }
+```
 
 * res
 
@@ -184,3 +203,89 @@ param: {
 
 
 ## 删除项目
+
+* req
+
+```
+url: /api/projects/:projectId
+method: DELETE
+param: {
+    isForceDelete: 'true' // [string]类型的'true' 表示完全删除，即从回收站删除，否则表示移动到回收站
+}
+```
+
+* res
+
+   
+
+状态码 201
+
+```json
+{
+    "status": 201,
+    "message": "移入回收站成功"
+}
+```
+
+状态码 204： 完全删除成功
+
+No Content
+
+
+状态码 404
+
+```json
+{
+    "status": 404,
+    "message": "该项目不存在"
+}    
+```
+
+## 从回收站恢复项目
+
+* req
+
+```
+url: '/api/projects/:projectId'
+method: PUT
+param: {
+    isRecover: 'true' // [string]
+}
+```
+
+* res 
+
+状态码 201 项目恢复成功
+
+```json
+{
+    "status": 201,
+    "message": "项目恢复成功",
+    "result": {
+        "_id": "5a026892b1a3470a527bfd36",
+        "name": "我的第2个项目",
+        "createBy": "julian",
+        "__v": 0,
+        "updateAt": "2017-11-08T02:14:42.556Z",
+        "createAt": "2017-11-08T02:14:42.556Z",
+        "isDeleted": false
+    }
+}
+```
+
+状态码 404 
+
+```json
+{
+    "status": 404,
+    "message": "该项目不存在"
+}
+```
+
+状态码 400
+```json
+{
+    "status": 400,
+    "message": "该项目不在回收站"
+}
+```

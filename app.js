@@ -14,7 +14,10 @@ var errorLogger = require('./middlewares/logger').errorLogger;
 var router = require('./routes');
 var mongoose = require('mongoose');
 let config = require('config'); //we load the db location from the JSON files
+const customValidators = require('./lib/customExpressValidator');
+var app = express();
 
+app.use(expressValidator({customValidators}));
 //连接数据库
 mongoose.Promise = Promise;
 mongoose.connect( config.DBHost,{
@@ -26,7 +29,7 @@ mongoose.connect( config.DBHost,{
 //定义账户策略
 require('./setup-passport');
 
-var app = express();
+
 var redisStore = new RedisStore({
     host: '127.0.0.1'
     ,port: '6379'

@@ -11,9 +11,10 @@ const _ = require('underscore');
 const constVars = {
     projectQuery: 'id name updateBy updateAt isDeleted',
     apiQuery: 'name reqUrl',
-    apiCanUpdate: 'projectName APIName reqUrl method canCrossDomain reqParams resParams successMock failMock reqMock',
-    apiCanRead: 'id projectName APIName reqUrl method canCrossDomain reqParams resParams successMock failMock reqMock createAt createBy updateAt updateBy version isDeleted',
-    duplicateCode: 11000
+    apiCanUpdate: 'projectName APIName reqUrl method canCrossDomain reqParams resParams successMock failMock',
+    apiCanRead: 'id projectName APIName reqUrl method canCrossDomain reqParams resParams successMock failMock createAt createBy updateAt updateBy version isDeleted',
+    duplicateCode: 11000,
+    httpMethods: ['GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']
 };
 
 // 这里统一处理'/api/**/*'路由下的鉴权
@@ -120,9 +121,14 @@ router.patch('/projects/:projectId', (req, res, next) => {
 router.delete('/projects/:projectId', (req, res, next) => {
     let projectId = req.params.projectId;
     let isForceDelete = req.body.isForceDelete;
-    if (isForceDelete === 'true') {
+
+    // 通过postman发送过来会自动转成string,
+    // $.ajax({method: 'DELETE', url: '/api/projects/5a01be45ea6b526e5696b196', data: {isForceDelete: true}})也会被转成string
+    // 但是测试代码却不会转...，所以接口统一规定isForceDelete为string类型吧
+    // 有时间去看一下bodyParse中间件文档吧
+    if (isForceDelete === 'true') { 
         // 完全删除
-        Project.findOneAndRemove({ id: projectId }, (err, doc) => {
+        Project.findByIdAndRemove(projectId, (err, doc) => {
             if (err) {
                 return next(err);
             }
@@ -132,21 +138,18 @@ router.delete('/projects/:projectId', (req, res, next) => {
                         if (err) {
                             return next(err);
                         }
-
-                        res.sendStatus(204);// 204删除成功
+                        res.sendStatus(204);
                     });
-
-
             } else {
-                res.send({
+                res.status(404).json({
                     status: '404',
                     message: '该项目不存在'
-                })
+                });
             }
         });
     } else {
         // 移入回收站
-        Project.findOneAndUpdate({ id: projectId }, {
+        Project.findByIdAndUpdate(projectId, {
             isDeleted: true
         }, (err, doc) => {
             if (err) {
@@ -160,17 +163,61 @@ router.delete('/projects/:projectId', (req, res, next) => {
                     if (err) {
                         return next(err);
                     }
-                    res.sendStatus(204);// 204删除成功
+                    // 发现204时响应会强制不带数据，都是No Content,所以还是用201吧
+                    return res.status(201).json({
+                        status: 201,
+                        message: '移入回收站成功'
+                    });
                 })
             } else {
-                res.send({
-                    status: '404',
+                return res.status(404).json({
+                    status: 404,
                     message: '该项目不存在'
-                })
+                });
             }
         })
     }
 
+});
+
+// 将项目移出回收站,回恢复项目
+router.put('/projects/:projectId', (req, res, next) => {
+    let isRecover = req.body.isRecover;
+    let projectId = req.params.projectId;
+
+    if(isRecover === 'true') {
+        Project.findById(projectId, (err, doc) => {
+            if(err) {
+                return next(err);
+            }
+            if(doc) {
+                if(doc.isDeleted === true) {
+                    doc.isDeleted = false;
+                    doc.save((err, savedDoc)=> {
+                        if(err) {
+                            return next(err);
+                        }
+                        return res.status(201).json({
+                            status: 201,
+                            message: '项目恢复成功',
+                            result: savedDoc
+                        });
+                    })
+                } else {
+                    return res.status(400).json({
+                        status: 400,
+                        message: '该项目不在回收站'
+                    });
+                }
+                
+            } else {
+                return res.status(404).json({
+                    status: 404,
+                    message: '该项目不存在'
+                });
+            }
+        });
+    }
 });
 
 // 读取当前项目apis
@@ -208,74 +255,43 @@ router.get('/projects/:projectId/apis', (req, res, next) => {
 
 });
 
-function checkAPI(req, res, next) {
+function checkApiReqData(req, res, next) {
+    // console.log(req.body);
+    // console.log(JSON.parse(req.body.reqParams));
     //校验基本数据格式
     req.checkBody({
-        projectName: {
+        reqUrl: {
             notEmpty: {
-                errorMessage: '项目名不能为空'
-            }
-        }
-        , APIName: {
-            notEmpty: {
-                errorMessage: '接口名不能为空'
-            }
-        }
-        , reqUrl: {
-            notEmpty: {
-                errorMessage: '接口名不能为空'
+                errorMessage: '接口路径不能为空'
             }
             , isURL: {
                 errorMessage: '接口路径错误'
             }
         }
         , method: {
-            notEmpty: {
-                errorMessage: '接口名不能为空'
-            }
-        }
-        , reqParams: {
-            custom: function (value) {
-                if (value) {
-                    try {
-                        let res = JSON.parse(value);
-                        if (!Array.isArray(res)) {
-                            return false;
-                        }
-                    } catch (err) {
-                        next(err);
-                        return false;
-                    }
-                }
-                return true;
-            }
-        }
-        , resParams: {
-            custom: function (value) {
-                if (value) {
-                    try {
-                        let res = JSON.parse(value);
-                        if (!Array.isArray(res)) {
-                            return false;
-                        }
-                    } catch (err) {
-                        next(err);
-                        return false;
-                    }
-                }
-                return true;
+            isHttpMethod: {
+                errorMessage: 'method不合法（注意method字段应为大写字母）'
             }
         }
         , successMock: {
-            notEmpty: {
-                errorMessage: '返回成功数据不能为空'
+            nullable: {
+                errorMessage: '返回成功数据successMock不能为空'
             }
         }
-
-    })
+        , failMock: {
+            nullable: {
+                errorMessage: '返回失败数据failMock不能为空'
+            }
+        }
+        , canCrossDomain: {
+            isBoolean: {
+                errorMessage: 'canCrossDomain不能为空，且为布尔值'
+            }
+        }
+    });
     let errors = req.validationErrors();
     if (errors) {
-        return res.send({
+        return res.status(400).json({
             status: 400,
             message: errors[0].msg
         })
@@ -284,132 +300,121 @@ function checkAPI(req, res, next) {
 }
 
 
-// 创建api
-router.post('/projects/:projectId/:APIName', checkAPI, (req, res, next) => {
-    //校验基本数据格式
-    req.checkBody({
-        reqUrl: {
-            notEmpty: {
-                errorMessage: '接口名不能为空'
-            }
-            , isURL: {
-                errorMessage: '接口路径错误'
-            }
-        }
-        , method: {
-            notEmpty: {
-                errorMessage: '接口名不能为空'
-            }
-        }
-        , reqParams: {
-            custom: function (value) {
-                if (value) {
-                    try {
-                        let res = JSON.parse(value);
-                        if (!Array.isArray(res)) {
-                            return false;
-                        }
-                    } catch (err) {
-                        next(err);
-                        return false;
-                    }
-                }
-                return true;
-            }
-        }
-        , resParams: {
-            custom: function (value) {
-                if (value) {
-                    try {
-                        let res = JSON.parse(value);
-                        if (!Array.isArray(res)) {
-                            return false;
-                        }
-                    } catch (err) {
-                        next(err);
-                        return false;
-                    }
-                }
-                return true;
-            }
-        }
-        , successMock: {
-            notEmpty: {
-                errorMessage: '返回成功数据不能为空'
-            }
-        }
+/**
+ * reqParams,resParams 字段比较复杂，单独校验
+ */
+function isReqResParamsValid(req, res, next) {
+    let {reqParams, resParams} = req.body;
+    let params = {reqParams, resParams};
 
-    })
-    let errors = req.validationErrors();
-    if (errors) {
-        return res.send({
-            status: 400,
-            message: errors[0].msg
-        })
-    }
-    next();
-}, (req, res, next) => {
-    // 创建 api item
-    let { projectName, APIName } = req.params;
-    let { reqUrl, method, canCrossDomain, reqParams, resParams, successMock, failMock, reqMock } = req.body;
-    canCrossDomain = (req.body.canCrossDomain === 'true' ? true : false);
-    let sessionUserName = req.session.username;
-    let api = {
-        projectName
-        , APIName
-        , reqUrl
-        , method
-        , canCrossDomain
-        , reqParams
-        , resParams
-        , successMock
-        , failMock
-        , reqMock
-        , createBy: sessionUserName
-        , updateBy: sessionUserName
-
-    };
-
-    Project.findOne({ name: projectName })
-        .exec((err, project) => {
-            if (err) {
-                return next(err);
-            } else if (project) {
-                //检测端口是否已存在
-                Api.findOne({
-                    projectName
-                    , APIName
-                }, function (err, doc) {
-                    if (err) {
-                        return next(err);
-                    }
-                    if (doc) {
-                        return res.status(422).send({
-                            status: 422,
-                            message: `该项目下或回收站中名为“${APIName}”的接口已存在`
-                        })
-                    }
-                })
-                let newApi = new Api(api);
-                newApi.save((err) => {
-                    if (err) {
-                        return next(err);
-                    }
-                    return res.sendStatus(201);
-                })
-
-            } else {
-                return res.status(404).send({
-                    status: 404,
-                    message: `project: ${projectName} not exist`
+    try {
+        for (let key in params) {
+            let fields = params[key]
+            if(!fields) {
+                return res.status(400).json({
+                    status: 400,
+                    message: `${key}不为空`
                 });
             }
-        })
+            for(let i = 0; i < fields.length; i++) {
+                let field = fields[i];
+                let stringFields = ['name', 'describe', 'type'];
+                if(!_.isBoolean(field.required)) {
+                    return res.status(400).json({
+                        status: 400,
+                        message: `${key}[${i}]中required字段应该为布尔值`
+                    });
+                }
+                
+                for(let j = 0; j < stringFields.length; j++) {
+                    let stringField = field[stringFields[j]];
+                    if(!_.isString(stringField) || stringField === '') {
+                        return res.status(400).json({
+                            status: 400,
+                            message: `${key}[${i}]中${stringFields[j]}字段应该为字符串且不为空`
+                        });
+                    }
+                }
+            }
+        } 
+        next();
+    } catch(err) {
+        next(err);
+    }
+}
+/**
+ * Request Headers
+ * Content-Type:application/json; charset=utf-8 
+ * 通过设置这个头部，然后前端把整个data数据JSON.stringify处理之后传过来，
+ * body-parser会将其解析为json，然后number,boolean就不会变成字符串形式的了
+ * 
+ * $.ajax默认设置的Content-Type为application/x-www-form-urlencoded，这种会导致number,boolean会变成字符串形式，nest array，object也需要单独JSON.stringify处理，否则会出问题
+ * 既然数据库使用的mongoDB，要不要统一规定前端直接全局对所求请求设置成application/json，就不会存在number,boolean会变成字符串形式的问题了???
+ * 
+ * method 请求方式 @string 校验http支持的method
+ * reqUrl 请求路径 @string 校验url格式 
+ * canCrossDomain 是否能跨域 @boolean
+ * 
+ * // 请求参数 @array
+ * reqParams = [
+ *      {
+ *          name: @string, // 参数名称 
+ *          required: @boolean, // 是否必填 // 非必填是否需要添加字段标示默认值呢
+ *          describe: @string   // 参数说明
+ *          type: @string // 参数类型
+ *      }
+ * ]
+ * resParams = [] // 返回参数 @array 内部结构同reqParams  // 如果一个字段是一个对象，对象内部的结构怎么描述，直接通过`.`连接来说明吧
+ * successMock @ required
+ * failMock @ required
+ * 
+ * todo: 可以搞个开关控制mock数据吐success,或fail
+ */
+// 创建api
+router.post('/projects/:projectId/:APIName', checkApiReqData, isReqResParamsValid, (req, res, next) => {
+    // 创建 api item
+    let { projectId, APIName } = req.params;
+    let { method, reqUrl, canCrossDomain, reqParams, resParams, successMock, failMock } = req.body;
+    let sessionUserName = req.session.username;
+    let api = {projectId, APIName, reqUrl, method, canCrossDomain, reqParams, resParams, successMock, failMock, 
+        createBy: sessionUserName, updateBy: sessionUserName
+    };
+
+    Project.findById(projectId).exec((err, project) => {
+        if (err) return next(err);
+        if (!project) {
+            return res.status(404).send({
+                status: 404,
+                message: `project: ${projectId} not exist`
+            });
+        }
+
+        Api.findOne({projectId, APIName}, (err, doc) => {
+            if (err) return next(err);
+
+            if (doc) {
+                return res.status(400).send({
+                    status: 400,
+                    message: `该项目下或回收站中名为“${APIName}”的接口已存在` // 后续可以给个参数，直接可以挤掉回收站中的接口
+                });
+            }
+            let newApi = new Api(api);
+            newApi.save((err, doc) => {
+                if (err) return next(err);
+
+                return res.status(201).json({
+                    status: 201,
+                    message: '创建成功',
+                    result: doc
+                });
+            });
+        });
+    })
 });
 
 
 router.route('/projects/:projectId/:apiId')
-    .put(checkAPI, (req, res, next) => {
+    .put(checkApiReqData, (req, res, next) => {
         // 更新api数据
         let { projectId, apiId } = req.params;
         let update = {};

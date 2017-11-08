@@ -14,7 +14,7 @@ const Schema = mongoose.Schema;
 //     }
 // }]
 const apiSchema = new Schema({
-    // api所属的项目名称
+    // api所属的项目的id
     projectId: {
         type: String,
         index: true
