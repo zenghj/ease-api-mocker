@@ -66,12 +66,12 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(expressValidator());
 
-// 正常请求的日志
+// 所有请求的简单日志
 app.use(successLogger);
 
 app.use(router);
 
-// 错误请求的日志
+// 请求发生错误的日志
 app.use(errorLogger);
 
 

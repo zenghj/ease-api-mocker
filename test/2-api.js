@@ -8,13 +8,18 @@ let user = require('./0-auth').user;
 let unAuthAgent = require('supertest').agent(app);
 let Project = require('../db').Project;
 let User = require('../db').User;
+let Api = require('../db').Api;
 let routerConfig = require('../routes/config');
+const _ = require('underscore');
+const deepCopy = require('../lib/util').deepCopy;
 
 let cache = {
-    newProjectName: 'my-proj的方法ect-name-Updated',
+    newProjectName: 'project for test api',
     notExistedId: mongoose.Types.ObjectId(),
-    projectId: undefined,
+    projectId: undefined, // 创建的project 的 Id
+    apiId: undefined, // 创建的api 的 Id
     apiName: 'test.json',
+    createApiReqProps: ['reqUrl, method, canCrossDomain, reqParams, resParams, successMock, failMock'],
     createApiReqData: {
         reqUrl: 'http://127.0.0.1:3000/api/projects',
         method: 'GET',
@@ -54,7 +59,7 @@ let cache = {
                 describe: '项目id',
                 type: 'String'
             }
-            
+
         ],
         successMock: {
             "docs": [
@@ -76,38 +81,276 @@ let cache = {
             "status": 401,
             "message": "未登录"
         }
-
     }
 };
 
-before('clear project data', async () => {
-    try {
-        let project = new Project({
-            name: cache.newProjectName,
-            createBy: user.username
-        });
-        await Project.remove({});
-        await project.save();
-    } catch(err) {
-        console.log(err);
-    }
-    
-});
-
 describe('Api 相关的接口', () => {
-    
+
+    before('clear Project Api data', async () => {
+        try {
+            let project = new Project({
+                name: cache.newProjectName,
+                createBy: user.username
+            });
+            await Project.remove({});
+            project = await project.save();
+            cache.projectId = project._id;
+            await Api.remove({});
+            // console.log(project);
+            // console.log(cache);
+        } catch (err) {
+            console.log(err);
+        }
+    });
+
     describe('创建api: POST /api/projects/:projectId/:APIName', () => {
         it('should 404 for 该项目不存在', (done) => {
-            agent.post(routerConfig.api.C.replace(':projectId', cache.notExistedId).replace('：APIName', cache.apiName))
+            agent.post(routerConfig.api.C.replace(':projectId', cache.notExistedId).replace(':APIName', cache.apiName))
                 .send(cache.createApiReqData)
+                .set('Content-Type', 'application/json;charset=UTF-8')
                 .end((err, res) => {
                     res.status.should.be.equal(404);
                     done();
-                })
-        })
-    });
-    
-    // describe('读取当前项目apis：GET /api/projects/:projectId/apis', () => {
+                });
+        });
 
+        // 为嘛不能循环一下，这么多校验，测试用例咋写。。
+        // cache.createApiReqProps.forEach((item) => {
+        //     it(`should 400 for ${item} 为空`, (done) => {
+        //         console.log(cache);
+        //         agent.post(routerConfig.api.C.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+        //         .send(_.omit(cache.createApiReqData, item))
+        //         .end((err, res) => {
+        //             res.status.should.be.equal(400);
+        //             done();
+        //         });
+        //     });
+        // });
+        // 'reqUrl, method, canCrossDomain, reqParams, resParams, successMock, failMock'
+        // 对于这种校验超级多的接口，怎么写测试用例会方便一点呢，而不是这种复制粘贴修改
+        it('should 400 for reqUrl 为空', (done) => {
+            agent.post(routerConfig.api.C.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+                .send(_.omit(cache.createApiReqData, 'reqUrl'))
+                .set('Content-Type', 'application/json;charset=UTF-8')
+                .end((err, res) => {
+                    res.status.should.be.equal(400);
+                    done();
+                });
+        });
+        it('should 400 for method 为空', (done) => {
+            agent.post(routerConfig.api.C.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+                .send(_.omit(cache.createApiReqData, 'method'))
+                .set('Content-Type', 'application/json;charset=UTF-8')
+                .end((err, res) => {
+                    res.status.should.be.equal(400);
+                    done();
+                });
+        });
+        it('should 400 for canCrossDomain 为空', (done) => {
+            agent.post(routerConfig.api.C.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+                .send(_.omit(cache.createApiReqData, 'canCrossDomain'))
+                .set('Content-Type', 'application/json;charset=UTF-8')
+                .end((err, res) => {
+                    res.status.should.be.equal(400);
+                    done();
+                });
+        });
+        it('should 400 for reqParams 为空', (done) => {
+            agent.post(routerConfig.api.C.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+                .send(_.omit(cache.createApiReqData, 'reqParams'))
+                .set('Content-Type', 'application/json;charset=UTF-8')
+                .end((err, res) => {
+                    res.status.should.be.equal(400);
+                    done();
+                });
+        });
+        it('should 400 for reqParams[0].name 为空', (done) => {
+            agent.post(routerConfig.api.C.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+                .send(_.omit(cache.createApiReqData.reqParams, 'name'))
+                .set('Content-Type', 'application/json;charset=UTF-8')
+                .end((err, res) => {
+                    res.status.should.be.equal(400);
+                    done();
+                });
+        });
+        it('should 400 for reqParams[0].describe 为空', (done) => {
+            agent.post(routerConfig.api.C.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+                .send(_.omit(cache.createApiReqData.reqParams, 'describe'))
+                .set('Content-Type', 'application/json;charset=UTF-8')
+                .end((err, res) => {
+                    res.status.should.be.equal(400);
+                    done();
+                });
+        });
+        it('should 400 for reqParams[0].type 为空', (done) => {
+            agent.post(routerConfig.api.C.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+                .send(_.omit(cache.createApiReqData.reqParams, 'type'))
+                .set('Content-Type', 'application/json;charset=UTF-8')
+                .end((err, res) => {
+                    res.status.should.be.equal(400);
+                    done();
+                });
+        });
+        it('should 400 for reqParams[0].required 为空', (done) => {
+            agent.post(routerConfig.api.C.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+                .send(_.omit(cache.createApiReqData.reqParams, 'required'))
+                .set('Content-Type', 'application/json;charset=UTF-8')
+                .end((err, res) => {
+                    res.status.should.be.equal(400);
+                    done();
+                });
+        });
+        it('should 400 for resParams 为空', (done) => {
+            agent.post(routerConfig.api.C.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+                .send(_.omit(cache.createApiReqData, 'resParams'))
+                .set('Content-Type', 'application/json;charset=UTF-8')
+                .end((err, res) => {
+                    res.status.should.be.equal(400);
+                    done();
+                });
+        });
+        it('should 400 for successMock 为空', (done) => {
+            agent.post(routerConfig.api.C.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+                .send(_.omit(cache.createApiReqData, 'successMock'))
+                .set('Content-Type', 'application/json;charset=UTF-8')
+                .end((err, res) => {
+                    res.status.should.be.equal(400);
+                    done();
+                });
+        });
+        it('should 400 for failMock 为空', (done) => {
+            agent.post(routerConfig.api.C.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+                .send(_.omit(cache.createApiReqData, 'failMock'))
+                .set('Content-Type', 'application/json;charset=UTF-8')
+                .end((err, res) => {
+                    res.status.should.be.equal(400);
+                    done();
+                });
+        });
+
+        it('should 400 for reqUrl 格式不正确', (done) => {
+            let notValidData = deepCopy(cache.createApiReqData);
+            notValidData.reqUrl = '/test-reqUrl-format.json';
+            agent.post(routerConfig.api.C.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+                .send(notValidData)
+                .set('Content-Type', 'application/json;charset=UTF-8')
+                .end((err, res) => {
+                    res.status.should.be.equal(400);
+                    done();
+                });
+        });
+
+        it('should 400 for method 不合法', (done) => {
+            let notValidData = deepCopy(cache.createApiReqData);
+            notValidData.method = 'get';
+            agent.post(routerConfig.api.C.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+                .send(notValidData)
+                .set('Content-Type', 'application/json;charset=UTF-8')
+                .end((err, res) => {
+                    res.status.should.be.equal(400);
+                    done();
+                });
+        });
+
+        it('should 400 for canCrossDomain 不为布尔值', (done) => {
+            let notValidData = deepCopy(cache.createApiReqData);
+            notValidData.canCrossDomain = 'test';
+            agent.post(routerConfig.api.C.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+                .send(notValidData)
+                .set('Content-Type', 'application/json;charset=UTF-8')
+                .end((err, res) => {
+                    res.status.should.be.equal(400);
+                    done();
+                });
+        });
+        it('should 400 for reqParams[0].required 不为布尔值', (done) => {
+            let notValidData = deepCopy(cache.createApiReqData);
+            notValidData.reqParams[0].required = 1;
+            agent.post(routerConfig.api.C.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+                .send(notValidData)
+                .set('Content-Type', 'application/json;charset=UTF-8')
+                .end((err, res) => {
+                    res.status.should.be.equal(400);
+                    done();
+                });
+        });
+
+        it('should 201 for 创建api成功', (done) => {
+            agent.post(routerConfig.api.C.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+                .send(cache.createApiReqData)
+                .set('Content-Type', 'application/json;charset=UTF-8')
+                .end((err, res) => {
+                    res.status.should.be.equal(201);
+                    res.body.result._id.should.not.be.null;
+                    cache.apiId = res.body.result._id;
+                    done();
+                });
+        });
+
+    });
+
+    describe('读取api详情: GET /api/projects/:projectId/:apiId', () => {
+
+        it('should 404 for not exist project id', (done) => {
+            agent.get(routerConfig.api.R.replace(':projectId', cache.notExistedId).replace(':apiId', cache.apiId))
+                .end((err, res) => {
+                    res.status.should.be.equal(404);
+                    done();
+                });
+        });
+
+        it('should be 200 to get api detail', (done) => {
+            agent.get(routerConfig.api.R.replace(':projectId', cache.projectId).replace(':apiId', cache.apiId))
+                .end((err, res) => {
+                    res.status.should.be.equal(200);
+                    res.body.result.should.not.be.null;
+                    done();
+                });
+        });
+    });
+
+
+    describe('更新api: PUT /api/projects/:projectId/:apiId', () => {
+
+        it('should 404 for not exist project id', (done) => {
+            agent.get(routerConfig.api.U.replace(':projectId', cache.notExistedId).replace(':apiId', cache.apiId))
+                .end((err, res) => {
+                    res.status.should.be.equal(404);
+                    done();
+                });
+        });
+
+        it('should be 201 to update api detail', (done) => {
+            let updateApiData = deepCopy(cache.createApiReqData);
+            updateApiData.canCrossDomain = false;
+            agent.put(routerConfig.api.U.replace(':projectId', cache.projectId).replace(':apiId', cache.apiId))
+                .send(updateApiData)
+                .end((err, res) => {
+                    res.status.should.be.equal(201);
+                    // res.body.result.canCrossDomain.should.be.equal(true);
+                    done();
+                });
+        });
+    });
+
+    // describe('分页读取当前项目apis：GET /api/projects/:projectId/apis', () => {
+    //     it('should 404 for 该项目不存在', (done) => {
+    //         agent.get(routerConfig.api.R.replace(':projectId', cache.notExistedId))
+    //             .end((err, res) => {
+    //                 res.status.should.be.equal(404);
+    //                 done();
+    //             });
+    //     });
+
+    //     it('should 200 读取api详情成功', (done) => {
+    //         agent.get(routerConfig.api.R.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
+    //             .end((err, res) => {
+    //                 res.status.should.be.equal(200);
+    //                 res.body.result.should.not.be.null;
+    //                 done();
+    //             });
+    //     });
     // });
+
+
 });

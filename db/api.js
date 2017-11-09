@@ -37,20 +37,17 @@ const apiSchema = new Schema({
         uppercase: true
     },
     canCrossDomain: Boolean,
-    reqParams: String,
-    resParams: String,
-    successMock: String,
-    failMock: String,
-    reqMock: String,
+    reqParams: Schema.Types.Mixed,
+    resParams: Schema.Types.Mixed,
+    successMock: Schema.Types.Mixed,
+    failMock: Schema.Types.Mixed,
+    // reqMock: String,
     createAt: {
         type: Date,
         default: Date.now // `Date.now()` returns the current unix timestamp as a number
     },
     createBy: String,
-    updateAt: {
-        type: Date,
-        default: Date.now
-    },
+    updateAt: Date,
     updateBy: String
 });
 

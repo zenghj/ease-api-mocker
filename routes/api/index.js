@@ -256,36 +256,34 @@ router.get('/projects/:projectId/apis', (req, res, next) => {
 });
 
 function checkApiReqData(req, res, next) {
-    // console.log(req.body);
-    // console.log(JSON.parse(req.body.reqParams));
     //校验基本数据格式
     req.checkBody({
         reqUrl: {
             notEmpty: {
-                errorMessage: '接口路径不能为空'
+                errorMessage: 'reqUrl接口路径不能为空'
             }
             , isURL: {
-                errorMessage: '接口路径错误'
+                errorMessage: 'reqUrl接口路径不是合法的url格式'
             }
         }
         , method: {
             isHttpMethod: {
-                errorMessage: 'method不合法（注意method字段应为大写字母）'
+                errorMessage: 'method http请求方式不合法（注意method字段应为大写字母）'
             }
         }
         , successMock: {
-            nullable: {
+            notEmpty: {
                 errorMessage: '返回成功数据successMock不能为空'
             }
         }
         , failMock: {
-            nullable: {
+            notEmpty: {
                 errorMessage: '返回失败数据failMock不能为空'
             }
         }
         , canCrossDomain: {
             isBoolean: {
-                errorMessage: 'canCrossDomain不能为空，且为布尔值'
+                errorMessage: '是否能跨域canCrossDomain不能为空，且为布尔值'
             }
         }
     });
@@ -296,9 +294,10 @@ function checkApiReqData(req, res, next) {
             message: errors[0].msg
         })
     }
-    next();
-}
 
+    isReqResParamsValid(req, res, next);
+
+}
 
 /**
  * reqParams,resParams 字段比较复杂，单独校验
@@ -319,6 +318,7 @@ function isReqResParamsValid(req, res, next) {
             for(let i = 0; i < fields.length; i++) {
                 let field = fields[i];
                 let stringFields = ['name', 'describe', 'type'];
+
                 if(!_.isBoolean(field.required)) {
                     return res.status(400).json({
                         status: 400,
@@ -337,6 +337,7 @@ function isReqResParamsValid(req, res, next) {
                 }
             }
         } 
+
         next();
     } catch(err) {
         next(err);
@@ -371,7 +372,7 @@ function isReqResParamsValid(req, res, next) {
  * todo: 可以搞个开关控制mock数据吐success,或fail
  */
 // 创建api
-router.post('/projects/:projectId/:APIName', checkApiReqData, isReqResParamsValid, (req, res, next) => {
+router.post('/projects/:projectId/:APIName', checkApiReqData, (req, res, next) => {
     // 创建 api item
     let { projectId, APIName } = req.params;
     let { method, reqUrl, canCrossDomain, reqParams, resParams, successMock, failMock } = req.body;
@@ -385,7 +386,7 @@ router.post('/projects/:projectId/:APIName', checkApiReqData, isReqResParamsVali
         if (!project) {
             return res.status(404).send({
                 status: 404,
-                message: `project: ${projectId} not exist`
+                message: `id为 ${projectId} 的项目不存在`
             });
         }
 
@@ -418,31 +419,66 @@ router.route('/projects/:projectId/:apiId')
         // 更新api数据
         let { projectId, apiId } = req.params;
         let update = {};
-
+        let forbidUpdateProps = [];
         Object.keys(req.body).forEach((key) => {
             if (constVars.apiCanUpdate.indexOf(key) >= 0) {
                 // 防止不允许用户更新的字段被更新
                 update[key] = req.body[key];
+            } else {
+                forbidUpdateProps.push(key);
             }
         });
 
+        // Api.findOne({
+        //     projectId,
+        //     _id: apiId
+        // }).exec((err, doc) => {
+        //     if(err) return next(err);
+
+        //     if(doc) {
+        //         doc = _.extend(doc, update);
+        //         doc.save((err, doc) => {
+        //             if(err) return next(err);
+        //             let result = _.pick(doc, constVars.apiCanUpdate.split(' '));
+        //             return res.status(201).json({
+        //                 status: 201,
+        //                 message: '更新成功'
+        //                 ,result: result // 如果觉得这个回写数据量大可以不要这个
+        //             });
+        //         });
+        //     } else {
+        //         return res.status(404).send({
+        //             status: 404,
+        //             message: `id为${projectId} 的项目下不存在id为 ${apiId}的api`
+        //         });
+        //     }
+
+        // });
+
+        // 相比上面的写法，findOneAndUpdate回调中doc得到的不是更新后的数据，很可能是更新前的错误数据，不能直接返回给前端
         Api.findOneAndUpdate({
             projectId,
-            id: apiId
+            _id: apiId
         }, update, (err, doc) => {
             if (err) {
                 return next(err);
             }
             if (doc) {
                 // console.log(doc);
-                let result = util.filterProp(doc, constVars.apiCanUpdate);
-                return res.status(201).send(result);
+                let successMsg;
+                if(forbidUpdateProps.length > 0) {
+                    successMsg = '更新成功, 但是 ' + forbidUpdateProps.join(' ') + ' 是禁止更新的'
+                }
+                return res.status(201).send({
+                    status: 201,
+                    message: successMsg || '更新成功'
+                });
             }
             return res.status(404).send({
                 status: 404,
-                message: `${projectName} 下不存在 ${APIName}`
-            })
-        })
+                message: `id为${projectId} 的项目下不存在id为 ${apiId}的api`
+            });
+        });
 
     })
     .get((req, res, next) => {
@@ -450,17 +486,21 @@ router.route('/projects/:projectId/:apiId')
         let { projectId, apiId } = req.params;
         Api.findOne({
             projectId,
-            id: apiId
+            _id: apiId
         }, constVars.apiCanRead).exec((err, api) => {
             if (err) {
                 return next(err);
             }
             if (api) {
-                return res.send(api);
+                return res.send({
+                    status: 200,
+                    result: api,
+                    message: '获取成功'
+                });
             }
             return res.status(404).send({
                 status: 404,
-                message: `id为${projectId}项目下不存在id为 ${apiId} 的接口`
+                message: `id为${projectId}的项目下不存在id为 ${apiId} 的接口`
             });
         })
 

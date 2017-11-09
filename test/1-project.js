@@ -19,13 +19,17 @@ let cache = {
     projectId: undefined
 };
 
-before('clear project data', async function () {
-    await Project.remove({});
-});
+// root level hook function will run before any case
+// before('clear project data', async function () {
+//     await Project.remove({});
+// });
 
 describe('Project 相关的接口', () => {
 
-    
+    before('clear project data', async function () {
+        await Project.remove({});
+    });
+
     describe('创建项目：POST /api/projects/:projectName', () => {
         it('should 401 for 未登录', (done) => {
             unAuthAgent.post('/api/projects/测试project的name')
@@ -58,7 +62,6 @@ describe('Project 相关的接口', () => {
         });
 
     });
-
 
     describe('分页获取所有项目列表：GET /api/projects', () => {
         it('should get projects array', (done) => {
@@ -118,7 +121,6 @@ describe('Project 相关的接口', () => {
 
 
     });
-
 
     describe('根据项目名称关键词搜索项目项目 GET /api/search/projects', () => {
         it('should 200 return one project data', (done) => {
@@ -224,8 +226,5 @@ describe('Project 相关的接口', () => {
                 });
         });
     });
-
-
-
 
 });
