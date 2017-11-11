@@ -32,7 +32,7 @@ router.route("/signup")
                         min: 3,
                         max: 10
                     },
-                    errorMessage: '用户名须为3-10位的字母'
+                    errorMessage: '用户名长度须为3-10位'
                 }
             },
             password: {
@@ -40,17 +40,22 @@ router.route("/signup")
                     errorMessage: '密码不能为空'
                 },
                 isAlphanumeric: {
-                    errorMessage: '密码至少6位数字或字母组合'
+                    errorMessage: '密码需为数字或字母组合'
                 },
                 isLength: {
                     options: {
                         min: 6
                         ,max: 20
-                        ,errorMessage: '密码至少6位数字或字母组合'
+                        ,errorMessage: '密码长度需要为6-20个字符'
                     }
                 }
+            },
+            gender: {
+                notEmpty: {
+                    errorMessage: '请勾选性别，用于决定生成随机头像的性别'
+                }
             }
-        })
+        });
         let errors = req.validationErrors();
         if (errors) {
             return res.send({
@@ -60,17 +65,22 @@ router.route("/signup")
         }
         next();
     }, (req, res, next) => {
-        let {username, password} = req.body;
+        /**
+         * username @string
+         * password @string
+         * gender @string "male"或"female"
+         */
+        let {username, password, gender = 'male'} = req.body;
 
         User.findOne({ username }, function (err, user) {
             if (err) { return next(err); }
             if (user) {
                 return res.status(400).send({
                     status: 400,
-                    message: '用户名已注册'
+                    message: '用户名已被注册'
                 });
             }
-            let avatarOption = (req.body.gender ? {'gender': req.body.gender} : {});
+            let avatarOption = {'gender': gender}; 
             let avatar = toonavatar.generate_avatar(avatarOption);
             User.create({
                 username
@@ -128,20 +138,24 @@ router.route("/login")
         return res.redirect(redirectTo);
     }, function(err, req, res, next) {
         // if(req.xhr) { 
-            return res.json(err);
+            return res.status(400).json({
+                status: 400,
+                message: "登录失败",
+                error: err
+            });
         // }
         // return res.redirect(routeMap.login);
     });
 
 // 登出
-router.get('/logout', function (req, res, next) {
+router.post('/logout', function (req, res, next) {
     req.logout();
     // delete req.session.username;
     res.redirect(routeMap.login);
 });
 
 
-// 更改密码接口
+// 更改密码接口 // 这个写的应该有问题
 router.post('/resetpwd', (req, res, next) => {
     let password = req.body.password;
     let newPassword = req.body.newPassword;
@@ -213,6 +227,6 @@ router.post('/resetpwd', (req, res, next) => {
             })
         }
     })(req, res, next);
-})
+});
 
 module.exports = router;

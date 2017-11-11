@@ -11,7 +11,8 @@ let app = require('../app');
 let routerConfig = require('../routes/config');
 let julian = {
     username: 'julian',
-    password: '111111'
+    password: '111111',
+    gender: 'male'
     // ,createdAt: Date.now
 };
 let agent = supertest.agent(app);

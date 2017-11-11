@@ -17,7 +17,7 @@ const routeMap = {
         'R': '/api/projects/:projectId/:apiId',
         'U': '/api/projects/:projectId/:apiId',
         'D': '/api/projects/:projectId/:apiId',
-        'search': '/api/search/:projectName/apis',
+        'search': '/api/search/:projectId/apis',
         'allInThisProj': '/api/:projectId/apis'
     }
 

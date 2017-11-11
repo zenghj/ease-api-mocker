@@ -62,9 +62,14 @@ router.get('/projects', (req, res, next) => {
             limit,
             select: constVars.projectQuery
         }).then((result) => {
-            result.status = 200;
-            res.status(200).json(result);
-        })
+            res.status(200).json({
+                status: 200,
+                message: '获取项目列表成功',
+                result: result
+            });
+        }).catch((err) => {
+            return next(err);
+        });
 });
 
 // 更改项目名称 （暂时不做是否已经在回收站的校验）
@@ -236,18 +241,8 @@ router.get('/search/projects', (req, res, next) => {
     Project.paginate({
         name: new RegExp(keyword, 'i')
         // name: keyword
-    }, { page: page, limit: limit }, (err, results) => {
+    }, { page, limit }, (err, results) => {
         if (err) {
-            if (err.docs && err.docs.length === 0) {
-                // 查询结果为[]
-                return res.status(200).json({
-                    status: 200,
-                    result: err,
-                    keyword: keyword
-                });
-            }
-            console.log('-------');
-            console.log(err);
             return next(err);
         } else {
             return res.status(200).json({
@@ -598,56 +593,62 @@ router.route('/projects/:projectId/:apiId')
 
 // api搜索
 // 暂未排除已经删除到回收站的结果
-router.get('/search/:projectName/apis', (req, res, next) => {
-    let { keyword, projectId, pageNo, pageSize } = req.query;
-
-    if (keyword && projectId && pageNo && pageSize) {
-        Api.find({
-            APIName: new RegExp(keyword, 'i')
-            , projectId
-        }, constVars.apiCanRead).paginate({
-            page: pageNo,
-            limit: pageSize
-        }).then((err, results) => {
-            if (err) {
-                return next(err);
-            }
-            return res.send(docs || []);
+router.get('/search/:projectId/apis', (req, res, next) => {
+    let projectId = req.params.projectId;
+    let {keyword = '', limit = 10, page = 1} = req.query;
+    if(keyword === '') {
+        return res.status(400).json({
+            status: 400,
+            message: 'keyword不能为空'
         });
-    } else {
-        // keyword为空怎么返回？到时候定
-        return res.sendStatus(400);
     }
+    Api.paginate({
+        APIName: new RegExp(keyword, 'i'),
+        projectId
+        // ,select: constVars.apiCanRead
+    }, {
+        page,
+        limit
+    }, (err, result) => {
+        if (err) return next(err);
+        return res.send({
+            status: 200,
+            message: '获取成功',
+            keyword: keyword,
+            result: result
+        });
+    });
 });
 
 // 分页读取当前项目apis
 
 /**
- * pageSize @number default 10
+ * limit @number page size, default 10 
+ * page @number page number
  */
-// router.get('/:projectId/apis', (req, res, next) => {
-//     let projectId = req.params.projectId;
-//     let limit = Number.parseInt(req.query.limit, 10) || 10;
-//     let page = Number.parseInt(req.query.page, 10) || 1;
+router.get('/:projectId/apis', (req, res, next) => {
+    let projectId = req.params.projectId;
+    let limit = Number.parseInt(req.query.limit, 10) || 10;
+    let page = Number.parseInt(req.query.page, 10) || 1;
 
-//     //分页获取
-//     Api.paginate({
-//         isDeleted: false,
-//         projectId: projectId
-//     }, {    
-//             page,
-//             limit,
-//             select: constVars.apiCanRead
-//         }).then((err, result) => {
-//             if(err) return next(err);
+    //分页获取
+    Api.paginate({
+        isDeleted: false,
+        projectId: projectId
+    }, {    
+            page,
+            limit,
+            select: constVars.apiCanRead
+        }, (err, result) => {
+            if(err) return next(err);
+            res.send({
+                status: 200,
+                message: '获取api成功',
+                result: result
+            });
 
-//             res.send({
-//                 status: 200,
-//                 message: '获取api成功',
-//                 result: result
-//             });
-//         });
-// });
+        });
+});
 
 
 // '/api'下的错误日志

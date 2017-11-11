@@ -69,7 +69,7 @@ describe('Project 相关的接口', () => {
                 .send({})
                 .end((err, res) => {
                     let result = res.body;
-                    let docs = result.docs;
+                    let docs = result.result.docs;
                     let allIsNotDeleted = docs.every((doc) => {
                         return doc.isDeleted === false;
                     });

@@ -388,7 +388,7 @@ describe('Api 相关的接口', () => {
         });
 
     });
-    describe('分页读取当前项目apis：GET /api/:projectId/apis', () => {
+    describe('读取当前项目apis：GET /api/:projectId/apis', () => {
 
         before('create 10 api in cache.projectid', () => {
             let api = deepCopy(cache.createApiReqData);
@@ -403,24 +403,33 @@ describe('Api 相关的接口', () => {
             }
         });
 
-        after('remove the all apis', () => {
-            Api.remove({});
-        });
-        it('should 404 for 该项目不存在', (done) => {
-            agent.get(routerConfig.api.allInThisProj.replace(':projectId', cache.notExistedId))
+        it('should 200 分页读取api列表成功 GET /api/:projectId/apis', (done) => {
+            agent.get(routerConfig.api.allInThisProj.replace(':projectId', cache.projectId))
                 .end((err, res) => {
-                    res.status.should.be.equal(404);
+                    // console.log(res);
+                    console.log(res.body.result.docs.length)
+                    res.status.should.be.equal(200);
+                    res.body.result.should.not.be.null;
+                    res.body.result.docs.length.should.be.equal(10);
                     done();
                 });
         });
 
-        it('should 200 读取api详情成功', (done) => {
-            agent.get(routerConfig.api.allInThisProj.replace(':projectId', cache.projectId))
+        it('should 400 keyword不能为空 GET /api/search/:projectId/apis', (done) => {
+            agent.get(routerConfig.api.search.replace(':projectId', cache.projectId))
                 .end((err, res) => {
-                    console.log(res);
+                    res.status.should.be.equal(400);
+                    done();
+                });
+        });
+
+        it('should 200 关键词搜索成功 GET /api/search/:projectId/apis', (done) => {
+            agent.get(routerConfig.api.search.replace(':projectId', cache.projectId))
+                .query({keyword: 'api-name-1'}) //注意不要用send()
+                .end((err, res) => {
+                    // console.log(res);
                     res.status.should.be.equal(200);
-                    res.body.result.should.not.be.null;
-                    res.body.result.docs.length.should.be.equal(10);
+                    res.body.result.docs.length.should.be.equal(1);
                     done();
                 });
         });

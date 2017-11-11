@@ -1,3 +1,4 @@
+[toc]
 # api相关的接口
 
 ## 在项目中创建api
@@ -5,7 +6,7 @@
 ### req 
 
 ```
-url: /projects/:projectId/:APIName  （ APIName 注意记得 encodeURIComponent)
+url: /api/projects/:projectId/:APIName  （ APIName 注意记得 encodeURIComponent)
 method: POST
 param: {
     method: @string HTTP 支持的 method 包括： 'GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH'
@@ -33,14 +34,14 @@ param: {
     "message": "id为 ${projectId} 的项目不存在"
 }
 ```
-    * 状态码 201
+#### 状态码 201
 
 ```json
 {
     "status": 201,
     "message": "创建成功",
     "result": {
-        // savedApi,包含创建的api的所有字段及api id信息
+        // api结构同“读取api详情”中的api结构
     }
 }
 ```
@@ -75,7 +76,7 @@ param: {
 ### req
 
 ```
-url: /projects/:projectId/:apiId
+url: /api/projects/:projectId/:apiId
 method: GET
 params: 无
 ```
@@ -88,8 +89,20 @@ params: 无
 {
     "status": 200,
     "message": "获取成功",
-    "result": {
-        // 包含的api的所有字段及api id信息
+    "result": { // api 数据结构
+                "_id": "5a030ab49e8f485430657161",
+                "APIName": "testn",
+                "reqUrl": "http://127.0.0.1:3000/",
+                "method": "POST",
+                "canCrossDomain": true,
+                "reqParams": {},
+                "resParams": {},
+                "createBy": "julian",
+                "updateBy": "julian",
+                "updateAt": "2017-11-08T13:46:28.441Z",
+                "createAt": "2017-11-08T13:46:28.441Z",
+                "version": "v0.0.1",
+                "isDeleted": false
     }
 }
 ```
@@ -109,7 +122,7 @@ params: 无
 ### req
 
 ```
-url: /projects/:projectId/:apiId
+url: /api/projects/:projectId/:apiId
 method: PUT
 params: 格式及校验要求同"创建api"
 ```
@@ -139,7 +152,7 @@ params: 格式及校验要求同"创建api"
 ### req
 
 ```
-url: /projects/:projectId/:apiId
+url: /api/projects/:projectId/:apiId
 method: DELETE
 params: {
     isForceDelete: 'true' // 从回收站强制删除时传'true',否则不传
@@ -173,7 +186,7 @@ No-Content
 
 ### req
 ```
-url: /projects/:projectId/:apiId
+url: /api/projects/:projectId/:apiId
 method: PATCH
 params: {
     isRecover: 'true'
@@ -204,6 +217,86 @@ params: {
 }
 ```
 
-## 分页读取当前项目apis
+## 分页读取当前项目下的apis
+
+### req
+
+```
+url: /api/:projectId/apis
+method: GET
+params: {
+    limit: @number // page size, default 10
+    page: @number // page number, default 1
+}
+```
+
+### res
+
+#### 200 状态码
+
+```json
+{
+    "status": 200,
+    "message": "获取api成功",
+    "result": {
+        "docs": [{
+                "_id": "5a030ab49e8f485430657161",
+                "APIName": "testn",
+                "reqUrl": "http://127.0.0.1:3000/",
+                "method": "POST",
+                "canCrossDomain": true,
+                "reqParams": {},
+                "resParams": {},
+                "createBy": "julian",
+                "updateBy": "julian",
+                "updateAt": "2017-11-08T13:46:28.441Z",
+                "createAt": "2017-11-08T13:46:28.441Z",
+                "version": "v0.0.1",
+                "isDeleted": false
+            }
+        ],
+        "total": 1,
+        "limit": 10,
+        "page": 1,
+        "pages": 1
+    }
+}
+```
 
 ## 当前项目下关键词搜索api
+
+### req
+
+```
+url: /api/:projectId/apis
+method: GET
+params: {
+    keyword: @string
+    limit: @number // page size, default 10
+    page: @number // page number, default 1
+}
+```
+
+### res
+
+#### 200 状态码
+
+```json
+{
+    "status": 200,
+    "message": "获取成功",
+    "keyword": "keyword",
+    "result": [{
+        // api结构同“读取api详情”中的api结构
+    }]
+}
+```
+
+#### 400 状态码
+```json
+
+{
+    "status": 400,
+    "message": "keyword不能为空"
+}
+```
