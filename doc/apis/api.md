@@ -2,7 +2,7 @@
 
 ## 在项目中创建api
 
-* req 
+### req 
 
 ```
 url: /projects/:projectId/:APIName  （ APIName 注意记得 encodeURIComponent)
@@ -23,8 +23,9 @@ param: {
 }
 ```
 
-* res
-    * 状态码 404
+### res
+
+#### 状态码 404
     
 ```json
 {
@@ -43,7 +44,8 @@ param: {
     }
 }
 ```
-    * 状态码 400 各种参数不合法
+
+#### 状态码 400 (各种参数不合法)
 
 ```json
 {
@@ -70,7 +72,7 @@ param: {
 
 ## 读取api详情
 
-* req
+### req
 
 ```
 url: /projects/:projectId/:apiId
@@ -78,9 +80,9 @@ method: GET
 params: 无
 ```
 
-* res
+### res
 
-    * 200状态码 
+#### 200状态码 
 
 ```json
 {
@@ -92,7 +94,7 @@ params: 无
 }
 ```
 
-    * 404 状态码
+#### 404 状态码
 
 ```json
 {
@@ -104,23 +106,27 @@ params: 无
 
 ## 更新api详情
 
-* req
+### req
 
 ```
 url: /projects/:projectId/:apiId
 method: PUT
 params: 格式及校验要求同"创建api"
 ```
-* res
 
-    * 201 状态码
+### res
+
+#### 201 状态码
+
 ```json
 {
     "status": 201,
     "message": "更新成功",
 }
 ```
-    * 404 状态码
+
+#### 404 状态码
+
 ```json
 {
     "status": 404,
@@ -129,3 +135,75 @@ params: 格式及校验要求同"创建api"
 ```
 
 ## 删除api
+
+### req
+
+```
+url: /projects/:projectId/:apiId
+method: DELETE
+params: {
+    isForceDelete: 'true' // 从回收站强制删除时传'true',否则不传
+}
+```
+
+### res
+
+#### 201 状态码
+
+```json
+{
+    "status": 201,
+    "message": "移入回收站成功",
+}
+```
+
+#### 204 状态码 从回收站彻底删除成功
+No-Content
+
+#### 404 状态码
+
+```json
+{
+    "status": 404,
+    "message": "id为${projectId} 的项目下不存在id为 ${apiId}的api",
+}
+```
+
+## 从回收站恢复api
+
+### req
+```
+url: /projects/:projectId/:apiId
+method: PATCH
+params: {
+    isRecover: 'true'
+}
+```
+
+### res
+
+
+#### 201 状态码
+
+```json
+{
+    "status": 201,
+    "message": "移出回收站成功",
+    "result": {
+        // 包含的api的所有字段及api id信息
+    }
+}
+```
+
+#### 404 状态码
+
+```json
+{
+    "status": 404,
+    "message": "id为${projectId} 的项目下不存在id为 ${apiId}的api",
+}
+```
+
+## 分页读取当前项目apis
+
+## 当前项目下关键词搜索api

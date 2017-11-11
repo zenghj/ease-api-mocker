@@ -11,7 +11,7 @@ const _ = require('underscore');
 const constVars = {
     projectQuery: 'id name updateBy updateAt isDeleted',
     apiQuery: 'name reqUrl',
-    apiCanUpdate: 'projectName APIName reqUrl method canCrossDomain reqParams resParams successMock failMock',
+    apiCanUpdate: 'projectName APIName reqUrl method canCrossDomain reqParams resParams successMock failMock isDeleted',
     apiCanRead: 'id projectName APIName reqUrl method canCrossDomain reqParams resParams successMock failMock createAt createBy updateAt updateBy version isDeleted',
     duplicateCode: 11000,
     httpMethods: ['GET', 'POST', 'HEAD', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']
@@ -220,40 +220,48 @@ router.put('/projects/:projectId', (req, res, next) => {
     }
 });
 
-// 读取当前项目apis
 
-router.get('/projects/:projectId/apis', (req, res, next) => {
-    let projectId = req.params.projectId;
-    let pageSize = Number.parseInt(req.query.pageSize, 10);
-    let pageNo = Number.parseInt(req.query.pageNo, 10);
-    if (pageSize && pageNo) {
-        //分页获取
-        Api.find({
-            isDeleted: false
-        }).paginate({
-            projectId: projectId
-        }, {
-                page: pageNo,
-                limit: pageSize,
-                select: constVars.apiCanUpdate
-            }).then((result) => {
-                res.send(result);
-            })
-
-    } else {
-        // 不分页
-        Api.find({
-            isDeleted: false,
-            projectId: projectId
-        }, constVars.apiCanRead, (err, docs) => {
-            if (err) {
-                return next(err);
-            }
-            return res.send(docs || []);
+// 项目搜索【名称、创建人、时间】暂时只写名称(忽略大小写) 
+// 暂未排除已经删除到回收站的结果
+router.get('/search/projects', (req, res, next) => {
+    let { keyword = '', page = 1, limit = 10 } = req.query;
+    // console.log(req.query);
+    if (keyword === '') {
+        return res.status(400).json({
+            status: 400,
+            message: 'keyword不能为空'
         });
     }
 
+    Project.paginate({
+        name: new RegExp(keyword, 'i')
+        // name: keyword
+    }, { page: page, limit: limit }, (err, results) => {
+        if (err) {
+            if (err.docs && err.docs.length === 0) {
+                // 查询结果为[]
+                return res.status(200).json({
+                    status: 200,
+                    result: err,
+                    keyword: keyword
+                });
+            }
+            console.log('-------');
+            console.log(err);
+            return next(err);
+        } else {
+            return res.status(200).json({
+                status: 200,
+                result: results,
+                keyword: keyword
+            });
+        }
+    })
+
 });
+
+
+
 
 function checkApiReqData(req, res, next) {
     //校验基本数据格式
@@ -513,7 +521,7 @@ router.route('/projects/:projectId/:apiId')
             // 彻底删除
             Api.findOne({
                 projectId: projectId,
-                id: apiId
+                _id: apiId
             }, (err, doc) => {
                 if (err) {
                     return next(err);
@@ -521,31 +529,36 @@ router.route('/projects/:projectId/:apiId')
                 if (doc) {
                     Api.remove({
                         projectId,
-                        id: apiId
+                        _id: apiId
                     }, (err) => {
                         if (err) {
                             return next(err);
                         }
                         return res.sendStatus(204); // 204: [DELETE]：用户删除数据成功。
-                    })
+                    });
+                } else {
+                    return res.status(404).send({
+                        status: 404,
+                        message: `id为${projectId}的项目下不存在id为 ${apiId} 的接口`
+                    });
                 }
 
-                return res.status(404).send({
-                    status: 404,
-                    message: `id为${projectId}的项目下不存在id为 ${apiId} 的接口`
-                })
+                
             });
         } else {
             // 放入回收站
             Api.findOneAndUpdate({
                 projectId: projectId,
-                id: apiId
+                _id: apiId
             }, { isDeleted: true }, (err, doc) => {
                 if (err) {
                     return next(err);
                 }
                 if (doc) {
-                    return res.sendStatus(204);
+                    return res.status(201).json({
+                        status: 201,
+                        message: '移入回收站成功'
+                    });
                 }
                 return res.status(404).send({
                     status: 404,
@@ -554,46 +567,34 @@ router.route('/projects/:projectId/:apiId')
             });
         }
 
-    });
-
-// 项目搜索【名称、创建人、时间】暂时只写名称(忽略大小写) 
-// 暂未排除已经删除到回收站的结果
-router.get('/search/projects', (req, res, next) => {
-    let { keyword = '', page = 1, limit = 10 } = req.query;
-    // console.log(req.query);
-    if (keyword === '') {
-        return res.status(400).json({
-            status: 400,
-            message: 'keyword不能为空'
-        });
-    }
-
-    Project.paginate({
-        name: new RegExp(keyword, 'i')
-        // name: keyword
-    }, { page: page, limit: limit }, (err, results) => {
-        if (err) {
-            if (err.docs && err.docs.length === 0) {
-                // 查询结果为[]
-                return res.status(200).json({
-                    status: 200,
-                    result: err,
-                    keyword: keyword
-                });
-            }
-            console.log('-------');
-            console.log(err);
-            return next(err);
-        } else {
-            return res.status(200).json({
-                status: 200,
-                result: results,
-                keyword: keyword
+    })
+    .patch((req, res, next) => {
+        let { projectId, apiId } = req.params;
+        let isRecover = req.body.isRecover;
+        if(isRecover === 'true') {
+            Api.findOne({projectId, _id: apiId}).exec((err, doc) => {
+                if(err) return next(err);
+                if(doc) {
+                    doc.isDeleted = false;
+                    doc.save((err, doc) => {
+                        if(err) return next(err);
+                        return res.status(201).json({
+                            status: 201,
+                            message: '移出回收站成功',
+                            result: doc
+                        });
+                    });
+                } else {
+                    return res.status(404).json({
+                        status: 404,
+                        message: `id为${projectId} 的项目下不存在id为 ${apiId}的api`
+                    });
+                }
             });
         }
-    })
+    });
 
-});
+
 
 // api搜索
 // 暂未排除已经删除到回收站的结果
@@ -617,7 +618,36 @@ router.get('/search/:projectName/apis', (req, res, next) => {
         // keyword为空怎么返回？到时候定
         return res.sendStatus(400);
     }
-})
+});
+
+// 分页读取当前项目apis
+
+/**
+ * pageSize @number default 10
+ */
+// router.get('/:projectId/apis', (req, res, next) => {
+//     let projectId = req.params.projectId;
+//     let limit = Number.parseInt(req.query.limit, 10) || 10;
+//     let page = Number.parseInt(req.query.page, 10) || 1;
+
+//     //分页获取
+//     Api.paginate({
+//         isDeleted: false,
+//         projectId: projectId
+//     }, {    
+//             page,
+//             limit,
+//             select: constVars.apiCanRead
+//         }).then((err, result) => {
+//             if(err) return next(err);
+
+//             res.send({
+//                 status: 200,
+//                 message: '获取api成功',
+//                 result: result
+//             });
+//         });
+// });
 
 
 // '/api'下的错误日志

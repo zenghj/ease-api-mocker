@@ -333,24 +333,98 @@ describe('Api 相关的接口', () => {
         });
     });
 
-    // describe('分页读取当前项目apis：GET /api/projects/:projectId/apis', () => {
-    //     it('should 404 for 该项目不存在', (done) => {
-    //         agent.get(routerConfig.api.R.replace(':projectId', cache.notExistedId))
-    //             .end((err, res) => {
-    //                 res.status.should.be.equal(404);
-    //                 done();
-    //             });
-    //     });
 
-    //     it('should 200 读取api详情成功', (done) => {
-    //         agent.get(routerConfig.api.R.replace(':projectId', cache.projectId).replace(':APIName', cache.apiName))
-    //             .end((err, res) => {
-    //                 res.status.should.be.equal(200);
-    //                 res.body.result.should.not.be.null;
-    //                 done();
-    //             });
-    //     });
-    // });
+    describe('将api移入回收站: PUT /api/projects/:projectId/:apiId', () => {
+        it("should 404 for projectId's apiId 不存在", (done) => {
+            agent.delete(routerConfig.api.D.replace(':projectId', cache.notExistedId).replace(':apiId', cache.apiId))
+                .end((err, res) => {
+                    res.status.should.be.equal(404);
+                    done();
+                });
+        });
+
+        it("should 201 移入回收站成功", (done) => {
+            agent.delete(routerConfig.api.D.replace(':projectId', cache.projectId).replace(':apiId', cache.apiId))
+                .end((err, res) => {
+                    res.status.should.be.equal(201);
+                    done();
+                });
+        });
+
+        it("should 404 移出回收站失败 for  projectId's apiId 不存在", (done) => {
+            agent.patch(routerConfig.api.U.replace(':projectId', cache.notExistedId).replace(':apiId', cache.apiId))
+                .send({ isRecover: 'true' })
+                .end((err, res) => {
+                    res.status.should.be.equal(404);
+                    done();
+                });
+        });
+
+        it("should 201 移出回收站成功", (done) => {
+            agent.patch(routerConfig.api.U.replace(':projectId', cache.projectId).replace(':apiId', cache.apiId))
+                .send({ isRecover: 'true' })
+                .end((err, res) => {
+                    res.status.should.be.equal(201);
+                    res.body.result.isDeleted.should.be.equal(false);
+                    done();
+                });
+        });
+
+        it("should 404 彻底删除失败 for  projectId's apiId 不存在", (done) => {
+            agent.delete(routerConfig.api.D.replace(':projectId', cache.notExistedId).replace(':apiId', cache.apiId))
+                .end((err, res) => {
+                    res.status.should.be.equal(404);
+                    done();
+                });
+        });
+
+        it("should 204 彻底删除成功", (done) => {
+            agent.delete(routerConfig.api.D.replace(':projectId', cache.projectId).replace(':apiId', cache.apiId))
+                .send({isForceDelete: 'true'})
+                .end((err, res) => {
+                    res.status.should.be.equal(204);
+                    done();
+                });
+        });
+
+    });
+    describe('分页读取当前项目apis：GET /api/:projectId/apis', () => {
+
+        before('create 10 api in cache.projectid', () => {
+            let api = deepCopy(cache.createApiReqData);
+            api.projectId = cache.projectId;
+            api.isDeleted = false;
+            for(let i = 0; i < 10; i++) {
+                api.APIName =  `api-name-${i}`;
+                let apiDoc = new Api(api);
+                apiDoc.save((err, doc) => {
+                    if(err) console.log(err);
+                });
+            }
+        });
+
+        after('remove the all apis', () => {
+            Api.remove({});
+        });
+        it('should 404 for 该项目不存在', (done) => {
+            agent.get(routerConfig.api.allInThisProj.replace(':projectId', cache.notExistedId))
+                .end((err, res) => {
+                    res.status.should.be.equal(404);
+                    done();
+                });
+        });
+
+        it('should 200 读取api详情成功', (done) => {
+            agent.get(routerConfig.api.allInThisProj.replace(':projectId', cache.projectId))
+                .end((err, res) => {
+                    console.log(res);
+                    res.status.should.be.equal(200);
+                    res.body.result.should.not.be.null;
+                    res.body.result.docs.length.should.be.equal(10);
+                    done();
+                });
+        });
+    });
 
 
 });
