@@ -8,6 +8,7 @@ var bodyParser = require('body-parser');
 var passport = require('passport');
 var session = require("express-session");
 var RedisStore = require('connect-redis')(session);
+var compression = require('compression');
 var expressValidator = require('express-validator');
 var successLogger = require('./middlewares/logger').successLogger;
 var errorLogger = require('./middlewares/logger').errorLogger;
@@ -17,6 +18,7 @@ let config = require('config'); //we load the db location from the JSON files
 const customValidators = require('./lib/customExpressValidator');
 var app = express();
 
+app.use(compression());
 app.use(expressValidator({customValidators}));
 //连接数据库
 mongoose.Promise = Promise;
@@ -63,8 +65,11 @@ app.set('view engine', 'jade');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(path.resolve(__dirname, './client/dist/static')));
+const staticFilesOpt = {
+  maxAge: 31536000000, // one year
+}
+app.use(express.static(path.join(__dirname, 'public'), staticFilesOpt));
+app.use(express.static(path.resolve(__dirname, './client/dist/static'), staticFilesOpt));
 app.use(expressValidator());
 
 // 所有请求的简单日志
