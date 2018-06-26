@@ -11,14 +11,14 @@ const toonavatar = require('cartoon-avatar');
 // baseUrl: '/auth'
 // 注册页
 router.route("/signup")
-    .get(function (req, res) {
-        if (req.isAuthenticated()) {
-            res.redirect(routeMap.home);
-        } else {
-            res.sendFile(path.resolve(__dirname, '../views/signup.html'));
-        }
+    // .get(function (req, res) {
+    //     if (req.isAuthenticated()) {
+    //         res.redirect(routeMap.home);
+    //     } else {
+    //         res.sendFile(path.resolve(__dirname, '../views/signup.html'));
+    //     }
 
-    })
+    // })
     .post( (req, res, next) => {
         //校验基本数据格式
         req.checkBody({
