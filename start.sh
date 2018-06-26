@@ -2,7 +2,7 @@ service mongodb start
 cd client
 npm run build
 cd ..
-npm run start
+npm run restart
 
 # sudo service mongodb start
 # sudo service mongodb stop
