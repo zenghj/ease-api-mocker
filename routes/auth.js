@@ -58,7 +58,7 @@ router.route("/signup")
         let errors = req.validationErrors();
         if (errors) {
             return res.send({
-                status: 400,
+                status: 401,
                 message: errors[0].msg
             })
         }
