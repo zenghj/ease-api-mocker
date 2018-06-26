@@ -249,6 +249,15 @@
             this.$message.error(data.message || '更新失败')
           })
       },
+      confirmDelete(e, item) {
+        this.$confirm('此操作将永久删除该接口的信息?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.deleteItem(e, item);
+        }).catch(() => {});
+      },
       deleteItem(e, item) {
         axios.delete(`/api/projects/${this.parentProject._id}/${item._id}`, {
           data: {

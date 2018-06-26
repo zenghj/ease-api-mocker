@@ -12,13 +12,13 @@ module.exports = {
     assetsPublicPath: '/',
     proxyTable: {
       '/api': {
-        target: 'http://localhost:3000'
+        target: 'http://localhost:3389'
       },
       '/auth': {
-        target: 'http://localhost:3000'
+        target: 'http://localhost:3389'
       },
       '/mock': {
-        target: 'http://localhost:3000'
+        target: 'http://localhost:3389'
       }
     },
 
