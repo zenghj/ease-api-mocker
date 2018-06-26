@@ -140,7 +140,7 @@
         })
       },
       confirmDelete(e, item) {
-        this.$confirm('此操作将永久删除该项目及项目中的所有接口信息?', '提示', {
+        this.$confirm('此操作将永久删除该项目及项目中的所有接口信息', '警告', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'

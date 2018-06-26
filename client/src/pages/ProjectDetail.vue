@@ -19,7 +19,7 @@
             <div class="action-btns">
               <el-button type="primary" @click.stop="fetchTest($event, item)">Test</el-button>
               <el-button class="el-icon-edit-btn" icon="el-icon-edit" type="primary" circle @click.stop="openEditDialog($event, item)"></el-button>
-              <el-button class="delete-item-btn" icon="el-icon-delete" type="danger" circle @click.stop="deleteItem($event, item)"></el-button>
+              <el-button class="delete-item-btn" icon="el-icon-delete" type="danger" circle @click.stop="confirmDelete($event, item)"></el-button>
             </div>
 
           </div>
@@ -250,7 +250,7 @@
           })
       },
       confirmDelete(e, item) {
-        this.$confirm('此操作将永久删除该接口的信息?', '提示', {
+        this.$confirm('此操作将永久删除该接口的信息', '警告', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'
