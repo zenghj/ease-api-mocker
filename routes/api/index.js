@@ -265,9 +265,9 @@ function checkApiReqData(req, res, next) {
             notEmpty: {
                 errorMessage: 'reqUrl接口路径不能为空'
             }
-            , isURL: {
-                errorMessage: 'reqUrl接口路径不是合法的url格式'
-            }
+            // , isURL: {
+            //     errorMessage: 'reqUrl接口路径不是合法的url格式'
+            // }
         }
         , method: {
             isHttpMethod: {
@@ -279,16 +279,16 @@ function checkApiReqData(req, res, next) {
                 errorMessage: '返回成功数据successMock不能为空'
             }
         }
-        , failMock: {
-            notEmpty: {
-                errorMessage: '返回失败数据failMock不能为空'
-            }
-        }
-        , canCrossDomain: {
-            isBoolean: {
-                errorMessage: '是否能跨域canCrossDomain不能为空，且为布尔值'
-            }
-        }
+        // , failMock: {
+        //     notEmpty: {
+        //         errorMessage: '返回失败数据failMock不能为空'
+        //     }
+        // }
+        // , canCrossDomain: {
+        //     isBoolean: {
+        //         errorMessage: '是否能跨域canCrossDomain不能为空，且为布尔值'
+        //     }
+        // }
     });
     let errors = req.validationErrors();
     if (errors) {
@@ -310,36 +310,36 @@ function isReqResParamsValid(req, res, next) {
     let params = {reqParams, resParams};
 
     try {
-        for (let key in params) {
-            let fields = params[key]
-            if(!fields) {
-                return res.status(400).json({
-                    status: 400,
-                    message: `${key}不为空`
-                });
-            }
-            for(let i = 0; i < fields.length; i++) {
-                let field = fields[i];
-                let stringFields = ['name', 'describe', 'type'];
+        // for (let key in params) {
+        //     let fields = params[key]
+        //     if(!fields) {
+        //         return res.status(400).json({
+        //             status: 400,
+        //             message: `${key}不为空`
+        //         });
+        //     }
+        //     for(let i = 0; i < fields.length; i++) {
+        //         let field = fields[i];
+        //         let stringFields = ['name', 'describe', 'type'];
 
-                if(!_.isBoolean(field.required)) {
-                    return res.status(400).json({
-                        status: 400,
-                        message: `${key}[${i}]中required字段应该为布尔值`
-                    });
-                }
+        //         if(!_.isBoolean(field.required)) {
+        //             return res.status(400).json({
+        //                 status: 400,
+        //                 message: `${key}[${i}]中required字段应该为布尔值`
+        //             });
+        //         }
                 
-                for(let j = 0; j < stringFields.length; j++) {
-                    let stringField = field[stringFields[j]];
-                    if(!_.isString(stringField) || stringField === '') {
-                        return res.status(400).json({
-                            status: 400,
-                            message: `${key}[${i}]中${stringFields[j]}字段应该为字符串且不为空`
-                        });
-                    }
-                }
-            }
-        } 
+        //         for(let j = 0; j < stringFields.length; j++) {
+        //             let stringField = field[stringFields[j]];
+        //             if(!_.isString(stringField) || stringField === '') {
+        //                 return res.status(400).json({
+        //                     status: 400,
+        //                     message: `${key}[${i}]中${stringFields[j]}字段应该为字符串且不为空`
+        //                 });
+        //             }
+        //         }
+        //     }
+        // } 
 
         next();
     } catch(err) {
@@ -650,6 +650,10 @@ router.get('/:projectId/apis', (req, res, next) => {
         });
 });
 
+router.get('/user/baseInfo.json', function(req, res) {
+    const user = req.user;
+    res.send(_.pick(user, 'avatar', '_id', 'username'));
+});
 
 // '/api'下的错误日志
 router.use(errorLogger);

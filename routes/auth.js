@@ -8,7 +8,6 @@ const routeMap = require('./config');
 const bcrypt = require("bcrypt-nodejs");
 const toonavatar = require('cartoon-avatar');
 
-
 // baseUrl: '/auth'
 // 注册页
 router.route("/signup")
@@ -102,13 +101,13 @@ router.route("/signup")
 
 // 登陆页
 router.route("/login")
-    .get(function (req, res, next) {
-        if (req.isAuthenticated()) {
-            res.redirect(routeMap.home)
-        } else {
-            res.sendFile(path.resolve(__dirname, '../views/login.html'));
-        }
-    })
+    // .get(function (req, res, next) {
+    //     if (req.isAuthenticated()) {
+    //         res.redirect(routeMap.home)
+    //     } else {
+    //         res.sendFile(routeMap.htmlFilePath);
+    //     }
+    // })
     .post( (req, res, next) => {
         //校验基本数据格式
         req.checkBody({
@@ -134,7 +133,7 @@ router.route("/login")
     }, passport.authenticate('login', { failWithError: true  }), function (req, res, next) {
         var redirectTo = req.session.redirectTo || routeMap.home;
         delete req.session.redirectTo;
-        req.session.username = req.body.username; // 把用户名存入session
+        req.session.username = req.body.username; // 把用户名存入session // 其实不用这么写，登陆之后req.user就可以获取到user的全部信息
         return res.redirect(redirectTo);
     }, function(err, req, res, next) {
         // if(req.xhr) { 
@@ -148,10 +147,10 @@ router.route("/login")
     });
 
 // 登出
-router.post('/logout', function (req, res, next) {
+router.get('/logout', function (req, res, next) {
     req.logout();
     // delete req.session.username;
-    res.redirect(routeMap.login);
+    res.redirect(routeMap.loginPage);
 });
 
 
