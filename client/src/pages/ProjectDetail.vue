@@ -4,7 +4,7 @@
     <section class="page-container project">
       <el-row class="clearfix">
         <el-breadcrumb separator="/" class="fl breadcrumb ">
-          <el-breadcrumb-item :to="{ path: '/projects.html' }">{{this.$props.project.name}}</el-breadcrumb-item>
+          <el-breadcrumb-item :to="{ name: 'Projects' }">{{this.$props.project.name}}</el-breadcrumb-item>
           <el-breadcrumb-item>api list</el-breadcrumb-item>
         </el-breadcrumb>
 

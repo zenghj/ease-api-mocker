@@ -29,9 +29,9 @@ router.route("/signup")
                 isLength: {
                     options: {
                         min: 3,
-                        max: 10
+                        max: 20
                     },
-                    errorMessage: '用户名长度须为3-10位'
+                    errorMessage: '用户名长度须为3-20位'
                 }
             },
             password: {
@@ -49,11 +49,11 @@ router.route("/signup")
                     }
                 }
             },
-            gender: {
-                notEmpty: {
-                    errorMessage: '请勾选性别，用于决定生成随机头像的性别'
-                }
-            }
+            // gender: {
+            //     notEmpty: {
+            //         errorMessage: '请勾选性别，用于决定生成随机头像的性别'
+            //     }
+            // }
         });
         let errors = req.validationErrors();
         if (errors) {
@@ -139,7 +139,7 @@ router.route("/login")
         // if(req.xhr) { 
             return res.status(400).json({
                 status: 400,
-                message: "登录失败",
+                message: "用户名或密码不正确",
                 error: err
             });
         // }
