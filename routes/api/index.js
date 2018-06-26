@@ -661,7 +661,7 @@ router.use(errorLogger);
 router.use((err, req, res, next) => {
     //只处理500未知错误
     return res.status(500).send({
-        error: err,
+        // error: err,
         status: 500,
         message: err.message || '未知服务器错误'
     })

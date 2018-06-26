@@ -83,22 +83,23 @@ app.use(errorLogger);
 
 // 捕获404错误
 app.use(function (req, res, next) {
-    var err = new Error('Not Found');
-    err.status = 404;
-    next(err);
+    // var err = new Error('Not Found');
+    // err.status = 404;
+    // next(err);
+    res.status(404).send('Not Found');
 });
 
 // 错误处理
-app.use(function (err, req, res, next) {
-    // 开发环境显示具体错误信息
-    res.locals.message = err.message;
-    res.locals.error = req.app.get('env') === 'development' ? err : {};
+// app.use(function (err, req, res, next) {
+//     // 开发环境显示具体错误信息
+//     res.locals.message = err.message;
+//     res.locals.error = req.app.get('env') === 'development' ? err : {};
     
-    // 渲染错误页面
-    res.status(err.status || 500);
-    res.render('error');
+//     // 渲染错误页面
+//     res.status(err.status || 500);
+//     res.render('error');
     
-});
+// });
 
 
 module.exports = app; // for testing

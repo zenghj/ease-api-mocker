@@ -2,7 +2,7 @@
   <section class="home section">
     <h1>To Make Front-End Dev Easier</h1>
     <router-link :to="{name: 'Projects'}">
-      <el-button round type="">start using</el-button>
+      <el-button round type="">Start Using</el-button>
     </router-link>
   </section>
 </template>
