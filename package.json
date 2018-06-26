@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "pm2 start ./bin/www --name ease-mocker",
+    "start": "pm2 start -f ./bin/www --name ease-mocker",
     "dev": "NODE_ENV=dev node ./bin/www",
     "test": "mocha --timeout 10000"
   },
