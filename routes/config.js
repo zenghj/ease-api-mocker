@@ -1,9 +1,11 @@
 'use strict';
+const path = require('path');
 
 const routeMap = {
     home: '/',
     signup: '/auth/signup',
-    login: '/auth/login',
+    login: '/authPage/login',
+    loginPage: '/authPage/login',
     logout: '/auth/logout',
     project: {
         'C': '/api/projects/:projectName',
@@ -19,7 +21,8 @@ const routeMap = {
         'D': '/api/projects/:projectId/:apiId',
         'search': '/api/search/:projectId/apis',
         'allInThisProj': '/api/:projectId/apis'
-    }
+    },
+    htmlFilePath: path.resolve(__dirname, '../client/dist/index.html')
 
 };
 

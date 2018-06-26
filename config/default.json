@@ -1,3 +1,4 @@
 {
-    "DBHost": "mongodb://localhost:27017/easy-api"
+    "DBHost": "mongodb://localhost:27017/easy-api",
+    "urlMongo": "mongodb://localhost:27017"
 }

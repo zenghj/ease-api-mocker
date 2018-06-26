@@ -74,7 +74,7 @@ params: {
 
 ```
 url: /auth/logout
-method: POST
+method: GET
 ```
 ### req
 

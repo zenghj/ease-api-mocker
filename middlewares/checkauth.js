@@ -4,8 +4,8 @@ const checkAuth = function (req, res, next) {
     if (req.isAuthenticated()) {
         next();
     } else {
-        req.session.redirectTo = req.originalUrl;
-        res.redirect(routeMap.login);
+        req.session && (req.session.redirectTo = req.originalUrl);
+        res.redirect(routeMap.loginPage);
     }
 };
 
