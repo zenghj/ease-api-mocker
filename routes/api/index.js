@@ -4,7 +4,7 @@ const router = express.Router();
 const Project = require('../../db/project');
 const Api = require('../../db/api');
 const apiCheckAuth = require('../../middlewares/checkauth').apiCheckAuth;
-const errorLogger = require('../../middlewares/logger').errorLogger;
+const handleError = require('../../middlewares/handleError');
 const util = require('../../lib/util');
 const _ = require('underscore');
 
@@ -655,16 +655,6 @@ router.get('/user/baseInfo.json', function(req, res) {
     res.send(_.pick(user, 'avatar', '_id', 'username'));
 });
 
-// '/api'下的错误日志
-router.use(errorLogger);
-
-router.use((err, req, res, next) => {
-    //只处理500未知错误
-    return res.status(500).send({
-        // error: err,
-        status: 500,
-        message: err.message || '未知服务器错误'
-    })
-});
+router.use(handleError);
 
 module.exports = router;

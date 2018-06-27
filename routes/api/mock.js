@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Api = require('../../db/api');
+const handleError = require('../../middlewares/handleError');
 function toJsonStr(str) {
   return str.replace(/\n/g, '');
 }
@@ -22,6 +23,7 @@ router.all('/mock/*', (req, res, next) => {
       next(err)
     }
   })
-})
+});
 
+router.use(handleError);
 module.exports = router;
