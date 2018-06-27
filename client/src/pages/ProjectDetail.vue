@@ -5,7 +5,7 @@
       <el-row class="clearfix">
         <el-breadcrumb separator="/" class="fl breadcrumb ">
           <el-breadcrumb-item :to="{ name: 'Projects' }">{{this.$props.project.name}}</el-breadcrumb-item>
-          <el-breadcrumb-item>api list</el-breadcrumb-item>
+          <el-breadcrumb-item>Api List</el-breadcrumb-item>
         </el-breadcrumb>
 
         <el-button class="fr" type="primary" icon="el-icon-plus" circle @click="openAddDialog"></el-button>

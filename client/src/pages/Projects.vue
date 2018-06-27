@@ -2,12 +2,12 @@
   <div>
     <my-header></my-header>
     <section class="page-container project">
-      <el-row class="clearfix">
-        <h1 class="fl">project list</h1>
+      <el-row class="clearfix title">
+        <h1 class="fl">Project List</h1>
         <el-button class="fr" type="primary" icon="el-icon-plus" circle @click="openAddDialog"></el-button>
       </el-row>
 
-      <el-dialog title="添加项目" :visible.sync="addDialogVisible" width="600px">
+      <el-dialog title="添加项目" :visible.sync="addDialogVisible" :before-close="closeAddDialog" width="600px">
         <el-form label-width="80px" :model="form" :rules="rules" ref="createForm">
           <el-form-item label="项目名称" prop="name">
             <el-input v-model="form.name"></el-input>
@@ -93,10 +93,10 @@
       },
       openAddDialog() {
         this.addDialogVisible = true;
-        this.initForm()
+        // this.initForm()
       },
       openEditDialog(e, item) {
-        this.initForm();
+        // this.initForm();
         Object.assign(this.form, {
           ...item,
           editingItem: item,
@@ -105,9 +105,8 @@
       },
       closeAddDialog() {
         this.addDialogVisible = false;
-      },
-      initForm() {
         Object.assign(this.form, {...initForm});
+        this.$refs['createForm'] && this.$refs['createForm'].clearValidate();
       },
       createItem() {
         this.$refs['createForm'].validate(valid => {
@@ -180,7 +179,9 @@
 <style scoped lang="less">
 @import '../assets/less/vars.less';
 .page-container.project {
-  // margin-top: 3em;
+  .title {
+    line-height: 40px;
+  }
 }
 .projects {
   // display: flex;
