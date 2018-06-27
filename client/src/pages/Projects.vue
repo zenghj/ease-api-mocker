@@ -8,8 +8,8 @@
       </el-row>
 
       <el-dialog title="添加项目" :visible.sync="addDialogVisible" width="600px">
-        <el-form label-width="80px">
-          <el-form-item label="项目名称">
+        <el-form label-width="80px" :model="form" :rules="rules" ref="createForm">
+          <el-form-item label="项目名称" prop="name">
             <el-input v-model="form.name"></el-input>
           </el-form-item>
         </el-form>
@@ -55,6 +55,11 @@
         addDialogVisible: false,
         form: {
           ...initForm
+        },
+        rules: {
+          name: {
+            required: true, message: '请输入项目名称', trigger: 'blur' 
+          }
         }
       }
     },
@@ -105,16 +110,20 @@
         Object.assign(this.form, {...initForm});
       },
       createItem() {
-        if(this.form.editingItem && this.form.editingItem._id) {
-          this.updateAction({
-            newProjectName: this.form.name,
-            _id: this.form.editingItem._id,
-          }) 
-        } else {
-          this.createAction({
-            name: this.form.name,
-          })
-        }
+        this.$refs['createForm'].validate(valid => {
+          if(valid) {
+            if(this.form.editingItem && this.form.editingItem._id) {
+              this.updateAction({
+                newProjectName: this.form.name,
+                _id: this.form.editingItem._id,
+              }) 
+            } else {
+              this.createAction({
+                name: this.form.name,
+              })
+            }
+          } 
+        })
       },
       createAction({name}) {
         axios.post(`/api/projects/${encodeURIComponent(name)}`)

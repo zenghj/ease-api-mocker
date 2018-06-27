@@ -30,19 +30,19 @@
         </el-card>
       </div>
 
-      <el-dialog title="添加接口" :visible.sync="addDialogVisible" width="600px" :close-on-click-modal="false">
-        <el-form label-width="120px">
-          <el-form-item label="APIName">
-            <el-input v-model="form.APIName"></el-input>
+      <el-dialog title="添加接口" :visible.sync="addDialogVisible" width="600px" :close-on-click-modal="false" :before-close="closeAddDialog">
+        <el-form :model="form" :rules="rules" ref="createForm" label-width="120px" >
+          <el-form-item label="APIName" prop="APIName">
+            <el-input v-model="form.APIName" ></el-input>
           </el-form-item>
-          <el-form-item label="Method">
-            <el-select v-model="form.method" placeholder="请选择">
+          <el-form-item label="Method" prop="method">
+            <el-select v-model="form.method" placeholder="请选择" >
               <el-option v-for="item in methodOptions" :key="item.value" :label="item.label" :value="item.value">
               </el-option>
             </el-select>
           </el-form-item>
-          <el-form-item label="Uri">
-            <el-input v-model="form.reqUrl"></el-input>
+          <el-form-item label="Uri" prop="reqUrl">
+            <el-input v-model="form.reqUrl" ></el-input>
           </el-form-item>
           <!-- <el-form-item label="支持跨域">
           <el-switch v-model="form.canCrossDomain"></el-switch>
@@ -68,8 +68,8 @@
           
         </el-form-item>
         <el-button @click.prevent="addReqParam()">添加请求参数</el-button> -->
-          <el-form-item label="成功响应">
-            <el-input type="textarea" :autosize="{ minRows: 2}" placeholder="请输入内容" v-model="form.successMock">
+          <el-form-item label="成功响应" prop="successMock">
+            <el-input type="textarea" :autosize="{ minRows: 2}" placeholder="请输入JSON格式的内容" v-model="form.successMock" >
             </el-input>
           </el-form-item>
           <!-- <el-form-item label="失败响应">
@@ -135,6 +135,30 @@
         },
         methodOptions: getSelectOpts(httpMethods),
         paramTypeOpts: getSelectOpts(paramTypes),
+        rules: {
+          APIName: {
+            required: true, message: '请输入接口名称', trigger: 'blur' 
+          },
+          method: {
+            required: true, message: '请选择接口请求方法', trigger: 'blur' 
+          },
+          reqUrl: {
+            required: true, message: '请选择接口请求方法', trigger: 'blur'
+          },
+          successMock: [{
+            required: true, message: '请输入成功响应', trigger: 'blur'
+          },{
+            validator: (rule, value, callback) => {
+              let jsonStr = toJsonStr(value);
+              try {
+                JSON.parse(jsonStr);
+                callback();
+              } catch(e) {
+                callback('不符合JSON格式');
+              }
+            }, trigger: 'blur'
+          }],
+        }
 
       }
     },
@@ -174,55 +198,51 @@
         }) 
       },
       openAddDialog() {
-        this.initForm()
+        // this.initForm()
         this.addDialogVisible = true;
       },
       openEditDialog(e, item) {
-        this.initForm();
+        // this.initForm();
         Object.assign(this.form, {
           ...item,
           editingItem: item,
         })
         this.addDialogVisible = true;
       },
-      closeAddDialog() {
+      // closeAddDialog() {
+      //   this.addDialogVisible = false;
+      // },
+      closeAddDialog(close) {
+        Object.assign(this.form, {...initForm});
+        this.$refs['createForm'] && this.$refs['createForm'].clearValidate();
         this.addDialogVisible = false;
       },
-      initForm() {
-        Object.assign(this.form, {...initForm})
-      },
       createItem() {
-        try {
-          let successMock = toJsonStr(this.form.successMock);
-          // let failMock = toJsonStr(this.form.failMock);
-          JSON.parse(successMock);
-          // JSON.parse(failMock);
-          let apiItem = {
-            method: this.form.method,
-            reqUrl: this.form.reqUrl,
-            successMock: this.form.successMock,
+        this.$refs['createForm'].validate(valid => {
+          if(valid) {
+            let apiItem = {
+              method: this.form.method,
+              reqUrl: this.form.reqUrl,
+              successMock: this.form.successMock,
+            }
+            if(this.form.editingItem && this.form.editingItem._id) {
+              this.updateAction({
+                projectId: this.parentProject._id,
+                apiId: this.form.editingItem._id,
+                data: {
+                  ...apiItem, 
+                  APIName: this.form.APIName
+                },
+              })
+            } else {
+              this.createAction({
+                projectId: this.parentProject._id,
+                APIName: this.form.APIName,
+                data: apiItem,
+              })
+            }
           }
-          if(this.form.editingItem && this.form.editingItem._id) {
-            this.updateAction({
-              projectId: this.parentProject._id,
-              apiId: this.form.editingItem._id,
-              data: {
-                ...apiItem, 
-                APIName: this.form.APIName
-              },
-            })
-          } else {
-            this.createAction({
-              projectId: this.parentProject._id,
-              APIName: this.form.APIName,
-              data: apiItem,
-            })
-          }
-
-        } catch(e) {
-          this.$message.error('mock json 格式出错')
-        }
-        
+        })        
       },
       createAction({projectId, APIName, data}) {
         axios.post(`/api/projects/${projectId}/${encodeURIComponent(APIName)}`, data)
@@ -295,7 +315,7 @@
 <style scoped lang="less">
 @import '../assets/less/vars.less';
 .page-container.project {
-  // margin-top: 3em;
+  padding-bottom: 2em;
 }
 .req-param-item {
   box-shadow: 0px 0px 5px #999;
