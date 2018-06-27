@@ -4,7 +4,7 @@ const path = require('path');
 const routeMap = {
     home: '/',
     signup: '/auth/signup',
-    login: '/authPage/login',
+    login: '/auth/login',
     loginPage: '/authPage/login',
     logout: '/auth/logout',
     project: {

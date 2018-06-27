@@ -1,7 +1,16 @@
 const winston = require('winston');
 const expressWinston = require('express-winston');
 const path = require('path');
+const routeMap = require('../routes/config');
 
+const privateRoutes = [
+  `post ${routeMap.signup}`,
+  `post ${routeMap.login}`,
+]
+function ignorePrivateRoute (req, res) {
+  var routeInfo =  `${req.method.toLowerCase()} ${req.path}`;
+  return privateRoutes.indexOf(routeInfo) > -1;
+}
 
 const successLogger = expressWinston.logger({
     transports: [
@@ -21,6 +30,7 @@ const successLogger = expressWinston.logger({
     // , expressFormat: true
     ,meta: false
     ,colorize: true
+    ,ignoreRoute: ignorePrivateRoute
 });
 
 const errorLogger = expressWinston.errorLogger({
@@ -35,6 +45,7 @@ const errorLogger = expressWinston.errorLogger({
             maxFiles: 10
         })
     ]
+    ,ignoreRoute: ignorePrivateRoute
 });
 
 module.exports = {
