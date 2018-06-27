@@ -209,13 +209,12 @@
         })
         this.addDialogVisible = true;
       },
-      // closeAddDialog() {
-      //   this.addDialogVisible = false;
-      // },
       closeAddDialog(close) {
-        Object.assign(this.form, {...initForm});
-        this.$refs['createForm'] && this.$refs['createForm'].clearValidate();
-        this.addDialogVisible = false;
+        if(this.addDialogVisible === true) {
+          this.addDialogVisible = false;
+          Object.assign(this.form, {...initForm});
+          this.$refs['createForm'] && this.$refs['createForm'].clearValidate();
+        }
       },
       createItem() {
         this.$refs['createForm'].validate(valid => {

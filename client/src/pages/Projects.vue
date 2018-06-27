@@ -104,9 +104,13 @@
         this.addDialogVisible = true;
       },
       closeAddDialog() {
-        this.addDialogVisible = false;
-        Object.assign(this.form, {...initForm});
-        this.$refs['createForm'] && this.$refs['createForm'].clearValidate();
+        if(this.addDialogVisible === true) {
+          this.addDialogVisible = false;
+          Object.assign(this.form, {...initForm});
+          // "ref 本身是作为渲染结果被创建的，在初始渲染的时候你不能访问它们 - 它们还不存在"
+          // mounted之后才能获取到
+          this.$refs['createForm'] && this.$refs['createForm'].clearValidate(); 
+        }
       },
       createItem() {
         this.$refs['createForm'].validate(valid => {
