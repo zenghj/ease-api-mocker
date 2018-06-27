@@ -15,9 +15,11 @@ Vue.use(ElementUI)
 // Add a response interceptor
 axios.interceptors.response.use(function (response) {
   return response
-}, function ({response}) {
-  if (response.status === 401) {
+}, function (error) {
+  if (error.response.status === 401) {
     window.location.href = '/authPage/login'
+  } else {
+    return Promise.reject(error)
   }
 })
 
