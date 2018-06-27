@@ -60,7 +60,8 @@ router.get('/projects', (req, res, next) => {
     }, {
             page,
             limit,
-            select: constVars.projectQuery
+            select: constVars.projectQuery,
+            sort: {createAt: -1}, // 逆序，新创建的排在前面
         }).then((result) => {
             res.status(200).json({
                 status: 200,
@@ -638,7 +639,8 @@ router.get('/:projectId/apis', (req, res, next) => {
     }, {    
             page,
             limit,
-            select: constVars.apiCanRead
+            select: constVars.apiCanRead,
+            sort: {createAt: -1}, // 逆序，新创建的排在前面
         }, (err, result) => {
             if(err) return next(err);
             res.send({
