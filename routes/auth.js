@@ -10,94 +10,94 @@ const toonavatar = require('cartoon-avatar');
 
 // baseUrl: '/auth'
 // 注册页
-router.route("/signup")
-    // .get(function (req, res) {
-    //     if (req.isAuthenticated()) {
-    //         res.redirect(routeMap.home);
-    //     } else {
-    //         res.sendFile(path.resolve(__dirname, '../views/signup.html'));
-    //     }
+// router.route("/signup")
+//     // .get(function (req, res) {
+//     //     if (req.isAuthenticated()) {
+//     //         res.redirect(routeMap.home);
+//     //     } else {
+//     //         res.sendFile(path.resolve(__dirname, '../views/signup.html'));
+//     //     }
 
-    // })
-    .post( (req, res, next) => {
-        //校验基本数据格式
-        req.checkBody({
-            username: {
-                notEmpty: {
-                    errorMessage: '用户名不能为空'
-                },
-                isLength: {
-                    options: {
-                        min: 3,
-                        max: 20
-                    },
-                    errorMessage: '用户名长度须为3-20位'
-                }
-            },
-            password: {
-                notEmpty: {
-                    errorMessage: '密码不能为空'
-                },
-                isAlphanumeric: {
-                    errorMessage: '密码需为数字或字母组合'
-                },
-                isLength: {
-                    options: {
-                        min: 6
-                        ,max: 20
-                        ,errorMessage: '密码长度需要为6-20个字符'
-                    }
-                }
-            },
-            // gender: {
-            //     notEmpty: {
-            //         errorMessage: '请勾选性别，用于决定生成随机头像的性别'
-            //     }
-            // }
-        });
-        let errors = req.validationErrors();
-        if (errors) {
-            return res.send({
-                status: 401,
-                message: errors[0].msg
-            })
-        }
-        next();
-    }, (req, res, next) => {
-        /**
-         * username @string
-         * password @string
-         * gender @string "male"或"female"
-         */
-        let {username, password, gender = 'male'} = req.body;
+//     // })
+//     .post( (req, res, next) => {
+//         //校验基本数据格式
+//         req.checkBody({
+//             username: {
+//                 notEmpty: {
+//                     errorMessage: '用户名不能为空'
+//                 },
+//                 isLength: {
+//                     options: {
+//                         min: 3,
+//                         max: 20
+//                     },
+//                     errorMessage: '用户名长度须为3-20位'
+//                 }
+//             },
+//             password: {
+//                 notEmpty: {
+//                     errorMessage: '密码不能为空'
+//                 },
+//                 isAlphanumeric: {
+//                     errorMessage: '密码需为数字或字母组合'
+//                 },
+//                 isLength: {
+//                     options: {
+//                         min: 6
+//                         ,max: 20
+//                         ,errorMessage: '密码长度需要为6-20个字符'
+//                     }
+//                 }
+//             },
+//             // gender: {
+//             //     notEmpty: {
+//             //         errorMessage: '请勾选性别，用于决定生成随机头像的性别'
+//             //     }
+//             // }
+//         });
+//         let errors = req.validationErrors();
+//         if (errors) {
+//             return res.send({
+//                 status: 401,
+//                 message: errors[0].msg
+//             })
+//         }
+//         next();
+//     }, (req, res, next) => {
+//         /**
+//          * username @string
+//          * password @string
+//          * gender @string "male"或"female"
+//          */
+//         let {username, password, gender = 'male'} = req.body;
 
-        User.findOne({ username }, function (err, user) {
-            if (err) { return next(err); }
-            if (user) {
-                return res.status(400).send({
-                    status: 400,
-                    message: '用户名已被注册'
-                });
-            }
-            let avatarOption = {'gender': gender}; 
-            let avatar = toonavatar.generate_avatar(avatarOption);
-            User.create({
-                username
-                ,password
-                ,avatar
-            }, function (err, data) {
-                if (err) {
-                    return next(err);
-                }
-                next(null);
-            });
+//         User.findOne({ username }, function (err, user) {
+//             if (err) { return next(err); }
+//             if (user) {
+//                 return res.status(400).send({
+//                     status: 400,
+//                     message: '用户名已被注册'
+//                 });
+//             }
+//             let avatarOption = {'gender': gender}; 
+//             let avatar = toonavatar.generate_avatar(avatarOption);
+//             User.create({
+//                 username
+//                 ,password
+//                 ,avatar
+//             }, function (err, data) {
+//                 if (err) {
+//                     return next(err);
+//                 }
+//                 next(null);
+//             });
 
-        });
-    }, passport.authenticate("login", {
-        successRedirect: routeMap.home,
-        failureRedirect: routeMap.signup,
-        failureFlash: true
-    }));
+//         });
+//     }, passport.authenticate("login", {
+//         successRedirect: routeMap.home,
+//         failureRedirect: routeMap.signup,
+//         failureFlash: true
+//     }));
 
 // 登陆页
 router.route("/login")
