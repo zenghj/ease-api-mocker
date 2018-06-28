@@ -22,7 +22,8 @@
       <div class="projects clearfix">
         <router-link v-for="(item, key) in projects" :key="key" :to="`/page/projects/${item._id}?project=${encodeURIComponent(JSON.stringify(item))}`" class="project-item fl">
           <el-card>
-            <div slot="header">{{item.name}}
+            <div slot="header">
+              <h2 class="project-name">{{item.name}}</h2>
               <div class="action-btns">
                 <el-button class="el-icon-edit-btn" icon="el-icon-edit" type="primary" circle @click.stop.prevent="openEditDialog($event, item)"></el-button>
                 <el-button class="delete-item-btn" icon="el-icon-delete" type="danger" circle @click.stop.prevent="confirmDelete($event, item)"></el-button>
@@ -182,6 +183,7 @@
 </script>
 <style scoped lang="less">
 @import '../assets/less/vars.less';
+@import '../assets/less/mixin.less';
 .page-container.project {
   .title {
     line-height: 40px;
@@ -205,6 +207,10 @@
   // background: @primaryColor;
   &:nth-child(3n + 1) {
     margin-left: 0;
+  }
+  .project-name {
+    .ellipsis();
+    width: 250px;
   }
   .action-btns {
     position: absolute;
