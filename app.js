@@ -100,6 +100,9 @@ app.use(function (req, res, next) {
 //     res.render('error');
     
 // });
+app.use(function(err, req, res, next) {
+  res.status(500).send('Server Error');
+})
 
 
 module.exports = app; // for testing

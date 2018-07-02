@@ -16,11 +16,13 @@ router.all('/mock/*', (req, res, next) => {
     if(err) {
       return next(err);
     }
-    try {
-      let successMock = doc.successMock;
-      res.json(JSON.parse(toJsonStr(successMock)))
-    } catch (err) {
-      next(err)
+    if(doc) {
+      try {
+        let successMock = doc.successMock;
+        res.json(JSON.parse(toJsonStr(successMock)))
+      } catch (err) {
+        next(err)
+      }
     }
   })
 });

@@ -136,14 +136,18 @@
         methodOptions: getSelectOpts(httpMethods),
         paramTypeOpts: getSelectOpts(paramTypes),
         rules: {
-          APIName: {
-            required: true, message: '请输入接口名称', trigger: 'blur' 
-          },
+          APIName: [{
+              required: true, 
+              whitespace: true,
+              message: '请输入接口名称', 
+              trigger: 'blur' 
+            },
+          ],
           method: {
-            required: true, message: '请选择接口请求方法', trigger: 'blur' 
+            required: true, message: '请选择接口请求方法', trigger: 'blur',
           },
           reqUrl: {
-            required: true, message: '请选择接口请求方法', trigger: 'blur'
+            required: true, whitespace: true, message: '请选择接口请求方法', trigger: 'blur'
           },
           successMock: [{
             required: true, message: '请输入成功响应', trigger: 'blur'
@@ -221,22 +225,23 @@
           if(valid) {
             let apiItem = {
               method: this.form.method,
-              reqUrl: this.form.reqUrl,
+              reqUrl: this.form.reqUrl.trim(),
               successMock: this.form.successMock,
             }
+            let APIName = this.form.APIName.trim();
             if(this.form.editingItem && this.form.editingItem._id) {
               this.updateAction({
                 projectId: this.parentProject._id,
                 apiId: this.form.editingItem._id,
                 data: {
                   ...apiItem, 
-                  APIName: this.form.APIName
+                  APIName,
                 },
               })
             } else {
               this.createAction({
                 projectId: this.parentProject._id,
-                APIName: this.form.APIName,
+                APIName,
                 data: apiItem,
               })
             }
