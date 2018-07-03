@@ -3,7 +3,8 @@
 // see http://vuejs-templates.github.io/webpack for documentation.
 
 const path = require('path')
-
+// const proxyTarget = 'http://47.95.13.52:3389'
+const proxyTarget = 'http://127.0.0.1:3389'
 module.exports = {
   dev: {
 
@@ -12,13 +13,13 @@ module.exports = {
     assetsPublicPath: '/',
     proxyTable: {
       '/api/': {
-        target: 'http://localhost:3389'
+        target: proxyTarget
       },
       '/auth/': {
-        target: 'http://localhost:3389'
+        target: proxyTarget
       },
       '/mock/': {
-        target: 'http://localhost:3389'
+        target: proxyTarget
       }
     },
 

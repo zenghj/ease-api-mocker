@@ -12,7 +12,7 @@ header {
   
   height: 40px;
   line-height: 40px;
-
+  min-width: 1200px;
   margin-bottom: 20px;
   background: @primaryColor;
   color: #fff;

@@ -23,7 +23,7 @@
             </div>
 
           </div>
-          <h2 class="field-title">成功响应</h2>
+          <h2 class="field-title">成功响应{{item.canCrossDomain && '（支持跨域）'}}</h2>
           <!-- <code>{{item.successMock}}</code> -->
           <el-input type="textarea" readonly :autosize="{ minRows: 2}" placeholder="请输入内容" v-model="item.successMock">
           </el-input>
@@ -31,15 +31,18 @@
       </div>
 
       <el-dialog title="添加接口" :visible.sync="addDialogVisible" width="600px" :close-on-click-modal="false" :before-close="closeAddDialog">
-        <el-form :model="form" :rules="rules" ref="createForm" label-width="120px" >
+        <el-form :model="form" :rules="rules" ref="createForm" label-width="120px" class="add-form">
           <el-form-item label="APIName" prop="APIName">
             <el-input v-model="form.APIName" ></el-input>
           </el-form-item>
-          <el-form-item label="Method" prop="method">
+          <el-form-item label="Method" prop="method" class="method-item inline-block">
             <el-select v-model="form.method" placeholder="请选择" >
               <el-option v-for="item in methodOptions" :key="item.value" :label="item.label" :value="item.value">
               </el-option>
             </el-select>
+          </el-form-item>
+          <el-form-item label="支持跨域" prop="canCrossDomain" class="inline-block">
+            <el-switch v-model="form.canCrossDomain"></el-switch>
           </el-form-item>
           <el-form-item label="Uri" prop="reqUrl">
             <el-input v-model="form.reqUrl" ></el-input>
@@ -103,6 +106,7 @@
   const initForm = {
           APIName: '',
           method: '',
+          canCrossDomain: false,
           reqUrl: '',
           successMock: '',
           editingItem: null,
@@ -225,6 +229,7 @@
           if(valid) {
             let apiItem = {
               method: this.form.method,
+              canCrossDomain: this.form.canCrossDomain,
               reqUrl: this.form.reqUrl.trim(),
               successMock: this.form.successMock,
             }
@@ -360,6 +365,15 @@
     right: 18px;
     top: 6px;
   }
+}
+
+.add-form {
+  .method-item {
+    width: 50%;
+  }
+}
+.inline-block {
+  display: inline-block;
 }
 </style>
 
