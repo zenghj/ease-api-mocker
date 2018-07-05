@@ -231,7 +231,7 @@
               method: this.form.method,
               canCrossDomain: this.form.canCrossDomain,
               reqUrl: this.form.reqUrl.trim(),
-              successMock: this.form.successMock,
+              successMock: JSON.stringify(JSON.parse(this.form.successMock), null, 4), // 格式化JSON串
             }
             let APIName = this.form.APIName.trim();
             if(this.form.editingItem && this.form.editingItem._id) {
