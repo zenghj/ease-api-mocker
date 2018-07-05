@@ -23,7 +23,7 @@
             </div>
 
           </div>
-          <h2 class="field-title">成功响应{{item.canCrossDomain && '（支持跨域）'}}</h2>
+          <h2 class="field-title">成功响应{{item.canCrossDomain ? '（支持跨域）' : ''}}</h2>
           <!-- <code>{{item.successMock}}</code> -->
           <el-input type="textarea" readonly :autosize="{ minRows: 2}" placeholder="请输入内容" v-model="item.successMock">
           </el-input>
