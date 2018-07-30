@@ -10,6 +10,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const ExtractTextPlugin = require('extract-text-webpack-plugin')
 const OptimizeCSSPlugin = require('optimize-css-assets-webpack-plugin')
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
+const ImageminPlugin = require('imagemin-webpack-plugin').default
 
 const env = require('../config/prod.env')
 
@@ -31,6 +32,17 @@ const webpackConfig = merge(baseWebpackConfig, {
     // http://vuejs.github.io/vue-loader/en/workflow/production.html
     new webpack.DefinePlugin({
       'process.env': env
+    }),
+    new ImageminPlugin({
+      disable: process.env.NODE_ENV !== 'production', // Disable during development
+      pngquant: {
+        quality: '65-80'
+      },
+      jpegtran: {
+        progressive: true
+      },
+      minFileSize: 10000,
+      cacheFolder: path.resolve('./cache')
     }),
     new UglifyJsPlugin({
       uglifyOptions: {
