@@ -2,7 +2,7 @@
   <section class="home section">
     <div class="container">
       <h2 class="slogon">To Make Front-End Dev Easier</h2>
-      <h4 class="text-center">本应用提供一个简单的静态mock服务器,便于本地开发项目时提供mock方案，实现前端开发完全不依赖于后端</h4>
+      <h4 class="text-center">本应用提供一个简单的静态mock服务器，便于本地开发项目时提供mock方案，实现前端开发完全不依赖于后端</h4>
       <br />
       <div class="text-center start-use">
         <router-link :to="{name: 'Projects'}">
@@ -13,7 +13,7 @@
       <br />
       <h4>1. 创建项目</h4>
       <div><img src="../assets/img/cp.jpeg" alt=""></div>
-      <h4>2. 创建mock接口</h4>
+      <h4>2. 在创建的项目中创建mock接口</h4>
       <div><img src="../assets/img/ca.jpeg" alt=""></div>
       <div><img src="../assets/img/cs.jpeg" alt=""></div>
       <h4>3. 本地开发代理转发配置</h4>
