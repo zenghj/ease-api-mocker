@@ -31,8 +31,7 @@
 
             </div>
             <div class="des">
-              <p>updateAt: {{item.updateAt}}</p>
-              <p>id: {{item._id}}</p>
+              <p>更新于: {{formatTime(item.updateAt)}}</p>
             </div>
           </el-card>
         </router-link>
@@ -43,6 +42,7 @@
 <script>
   import axios from 'axios'
   import MyHeader from '../components/MyHeader.vue'
+  import {formatTime} from '../assets/js/helper.js'
 
   const initForm = {
     name: '',
@@ -69,6 +69,7 @@
     },
 
     methods: {
+      formatTime,
       fetchList() {
         axios.get('/api/projects', {
           params: {
