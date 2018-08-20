@@ -34,7 +34,7 @@
             <!-- <code>{{item.successMock}}</code> -->
             <el-input type="textarea" readonly :autosize="{ minRows: 2}" placeholder="请输入内容" v-model="item.successMock"></el-input>
           </div>
-          <div v-show="!item.visible">...</div>
+          <div class="cursor-pointer" v-show="!item.visible" @click="toggleCardBody($event, item, index)">...</div>
         </el-card>
       </div>
       <div v-if="inited && list.length <= 0" class="no-api-items">暂无数据</div>
@@ -349,6 +349,9 @@
 </script>
 <style scoped lang="less">
 @import '../assets/less/vars.less';
+.cursor-pointer {
+  cursor: pointer;
+}
 .page-container.project {
   padding-bottom: 2em;
 }
