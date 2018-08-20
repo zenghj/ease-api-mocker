@@ -11,24 +11,33 @@
         <el-button class="fr" type="primary" icon="el-icon-plus" circle @click="openAddDialog"></el-button>
       </el-row>
 
+        <div class="operates">
+          <el-checkbox v-model="spreadAll">全部展开</el-checkbox>
+        </div> 
       <div class="api-items">
-        <el-card class="api-item box-card" v-for="item in list" :key="item._id">
+        <el-card class="api-item box-card" v-for="(item, index) in list" :key="item._id">
           <div slot="header" class="clearfix">
             <h1>{{item.APIName}} {{item.method}} {{item.reqUrl}}
             </h1>
             <div class="action-btns">
+              
               <el-button type="primary" @click.stop="fetchTest($event, item)">Test</el-button>
+              <el-button type="primary" @click.stop="toggleCardBody($event, item, index)" circle>
+                <i :class="item.visible ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
+              </el-button>
               <el-button class="el-icon-edit-btn" icon="el-icon-edit" type="primary" circle @click.stop="openEditDialog($event, item)"></el-button>
               <el-button class="delete-item-btn" icon="el-icon-delete" type="danger" circle @click.stop="confirmDelete($event, item)"></el-button>
             </div>
-
           </div>
-          <h2 class="field-title">成功响应{{item.canCrossDomain ? '（支持跨域）' : ''}}</h2>
-          <!-- <code>{{item.successMock}}</code> -->
-          <el-input type="textarea" readonly :autosize="{ minRows: 2}" placeholder="请输入内容" v-model="item.successMock">
-          </el-input>
+          <div v-show="item.visible" class="card-body">
+            <h2 class="field-title">成功响应{{item.canCrossDomain ? '（支持跨域）' : ''}}</h2>
+            <!-- <code>{{item.successMock}}</code> -->
+            <el-input type="textarea" readonly :autosize="{ minRows: 2}" placeholder="请输入内容" v-model="item.successMock"></el-input>
+          </div>
+          <div v-show="!item.visible">...</div>
         </el-card>
       </div>
+      <div v-if="inited && list.length <= 0" class="no-api-items">暂无数据</div>
 
       <el-dialog title="添加接口" :visible.sync="addDialogVisible" width="600px" :close-on-click-modal="false" :before-close="closeAddDialog">
         <el-form :model="form" :rules="rules" ref="createForm" label-width="120px" class="add-form">
@@ -166,8 +175,9 @@
               }
             }, trigger: 'blur'
           }],
-        }
-
+        },
+        spreadAll: false,
+        inited: false,
       }
     },
     created () {
@@ -176,6 +186,16 @@
     computed: {
       parentProject() {
         return this.$props.project;
+      }
+    },
+    watch: {
+      spreadAll: function(newVal, val) {
+        this.list.forEach((item, idx, array) => {
+          this.$set(array, idx, {
+            ...array[idx],
+            visible: newVal,
+          });
+        })
       }
     },
     components: {
@@ -203,7 +223,9 @@
               message: '拉取列表失败',
               duration: 0
             })
-        }) 
+        }).finally(() => {
+          this.inited = true;
+        })
       },
       openAddDialog() {
         // this.initForm()
@@ -310,11 +332,15 @@
         }).catch(res => {
           console.error(res);
         })
-      }
+      },
       // removeReqParam(reqParam) {},
       // addReqParam() {
         
       // },
+      toggleCardBody(e, item, idx) {
+        item.visible = !item.visible;
+        this.$set(this.list, idx, item);
+      }
       
     },
 
@@ -349,9 +375,15 @@
 .breadcrumb {
   line-height: 40px;
 }
+.api-items {
+  margin-top: 1em;
+}
 .api-item {
   position: relative;
   margin-top: 2em;
+  &:first-child {
+    margin-top: 0em;
+  }
   .field-title {
     margin-bottom: 1em;
   }
@@ -365,6 +397,10 @@
     right: 18px;
     top: 6px;
   }
+}
+.no-api-items {
+  text-align: center;
+  margin-top: 4em;
 }
 
 .add-form {
