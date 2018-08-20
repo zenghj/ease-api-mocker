@@ -12,7 +12,7 @@
       </el-row>
 
         <div class="operates">
-          <el-checkbox v-model="spreadAll">全部展开</el-checkbox>
+          <el-checkbox v-model="spreadAll">全部展开/折叠</el-checkbox>
         </div> 
       <div class="api-items">
         <el-card class="api-item box-card" v-for="(item, index) in list" :key="item._id">
