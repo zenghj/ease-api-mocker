@@ -394,13 +394,13 @@ router.post('/projects/:projectId/:APIName', checkApiReqData, (req, res, next) =
             });
         }
 
-        Api.findOne({projectId, APIName}, (err, doc) => {
+        Api.findOne({projectId, method, reqUrl}, (err, doc) => {
             if (err) return next(err);
 
             if (doc) {
                 return res.status(400).send({
                     status: 400,
-                    message: `该项目下或回收站中名为“${APIName}”的接口已存在` // 后续可以给个参数，直接可以挤掉回收站中的接口
+                    message: `该项目下或回收站中已经存在接口： ${method} ${reqUrl}` // 后续可以给个参数，直接可以挤掉回收站中的接口
                 });
             }
             let newApi = new Api(api);
